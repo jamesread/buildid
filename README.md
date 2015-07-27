@@ -4,7 +4,7 @@
 A **bundle of stuff** can be a checked out source code repository or even a 
 released package like a .RPM or .ZIP
 
-# What can buildid do?
+# What can bundleid do?
 
 ## Developers fixing bugs want to know precisely where running code came from
 
@@ -34,7 +34,7 @@ CHANGED_FILES: etc/myproject/configuration.ini (M), /etc/myproject/bar (N)
 
 ## Developers need version numbers for packages in a CI build
 
-You can run `buildid` from a Jenkins job, for example.
+You can run `bundleid` from a Jenkins job, for example.
 
 ```
 user@host: bundleid
