@@ -1,0 +1,146 @@
+#!/usr/bin/python
+
+import argparse
+import time
+import re
+import platform
+from socket import gethostname
+import os
+
+parser = argparse.ArgumentParser();
+parser.add_argument("--format", "-f", default = "ini", choices = ["ini", "json"]);
+parser.add_argument("--platform", default = None)
+parser.add_argument("--incrementMajor", action = 'store_true')
+parser.add_argument("--incrementMinor", action = 'store_true')
+parser.add_argument("-q", "--quiet", action = 'store_true')
+parser.add_argument("-d", "--debug", action = 'store_true')
+args = parser.parse_args()
+
+def getVersion():
+	version = {
+		"major": 0,
+		"minor": 0,
+		"revision": 0,
+		"release": ''
+	}
+
+	try:
+		versionFile = open('VERSION', 'r')
+		content = versionFile.read()
+		versionFile.close()
+
+		m = re.search("(\d).(\d).(\d)-(.+)", content)
+
+		if m != None:
+			version['major'] = int(m.group(1))
+			version['minor'] = int(m.group(2))
+			version['revision'] = int(m.group(3))
+			version['release'] = m.group(4)
+		elif args.debug:
+			print "VERSION file did not match regex."
+	except Exception as e:
+		print e
+
+	return version
+
+def runCommand(cmd):
+	return ""
+
+def isEmpty(value):
+	if value == None:
+		return True
+
+	if value == 0:
+		return True
+
+	if value == '':
+		return True
+
+	return False
+
+def getVersionFormattedGnu(version):
+	if isEmpty(version['release']):
+		rel = ''
+	else:
+		rel = '-' + str(version['release'])
+
+	return str(version['major']) + "." + str(version["minor"]) + "." + str(version['revision']) + rel
+
+def getVersionFormattedWin(version):
+	if isEmpty(version['release']):
+		rel = '.0';
+	else:
+		rel = '.' + str(version['release'])
+
+	return str(version['major']) + "." + str(version["minor"]) + "." + str(version['revision']) + rel
+
+def getPlatform():
+	if args.platform != None:
+		return args.platform
+	else:
+		return "linux"
+
+def getVersionFormattedPlatform():
+	return getVersionFormattedGnu(version)
+
+def getCommitTag():
+	return '00000'
+
+def isReleaseBuild():
+	return False
+
+def getSourceTag():
+	if isReleaseBuild() and isEverythingCommited():
+		return getCommitTag()
+	else:
+		return properties['timestamp']
+
+def getPackageTag():
+	return getVersionFormattedPlatform() + "-" + getSourceTag()
+
+def isEverythingCommited():
+	return False
+
+def saveVersion():
+	f = open("VERSION", "w")
+	f.write(getVersionFormattedGnu(version))
+	f.close()
+
+properties = dict()
+properties["timestamp"] = str(int(time.time()))
+
+version = getVersion()
+
+properties["version.major"] = version['major']
+properties["version.minor"] = version['minor']
+properties["version.release"] = version['release']
+properties["version.revsision"] = version['revision']
+properties["version.formatted.gnu"] = getVersionFormattedGnu(version)
+properties["version.formatted.win"] = getVersionFormattedWin(version)
+properties["tag"] = getPackageTag()
+properties["buildhost.platform"] = platform.platform()
+properties["buildhost.system"] = platform.system()
+properties["buildhost.release"] = platform.release()
+properties["buildhost.version"] = platform.version()
+properties["buildhost.hostname"] = gethostname()
+
+if args.incrementMajor:
+	version['major'] = version['major'] + 1
+	args.quiet = True
+
+if args.incrementMinor:
+	version['minor'] = version['minor'] + 1
+	args.quiet = True
+
+if not args.quiet:
+	if args.format in ["properties", "ini"]:
+		for key in sorted(properties):
+			print key + "=" + str(properties[key])
+
+	if args.format  == "json":
+		import json
+
+		print json.dumps(properties, indent = 4)
+
+saveVersion()
+os.environ["bundleid-version-formatted-gnu"] = getVersionFormattedGnu(version)
