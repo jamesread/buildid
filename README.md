@@ -19,9 +19,9 @@ BUILDDATE=2015-07-27
 
 If your stuff came from an **RPM**, no point in replicating working functionality.
 ```
-user@host: cd /opt/**myproject**/
+user@host: cd /opt/myproject/
 user@host: ./bundleid --changes
-**myproject** was installed via an RPM, use \`rpm -qv myproject\` to verify it.
+myproject was installed via an RPM, use \`rpm -qv myproject\` to verify it.
 ```
 
 But if you released a **zip** file, this is how it would work;
@@ -42,6 +42,8 @@ COMMIT=dacab494b5b355e4a1a0e856c672b3cbd421ab0a
 BRANCH=new-feat-2
 TYPE=nightly
 VERSION_STRING_SIMPLE=1.0.0
+PACKAGE_NAME-myproject-1.0.0-win
+PACKAGE_FILENAME-myproject-1.0.0-win.zip
 ```
 
 # FAQ 
