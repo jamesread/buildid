@@ -1,6 +1,9 @@
 # bundleid
 **Version numbers suck.** Identify bundles of stuff instead. 
 
+A **bundle of stuff** can be a checked out source code repository or even a 
+released package like a .RPM or .ZIP
+
 # What can buildid do?
 
 ## Developers fixing bugs want to know precisely where running code came from
