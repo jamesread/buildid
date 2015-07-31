@@ -1,8 +1,10 @@
 # bundleid
-**Version numbers suck.** Identify bundles of stuff instead. 
+`bundleid` gathers up and maintains identity properties for a build, and makes 
+it easy to keep that build identity from compile-time through to run-time.
 
-A **bundle of stuff** can be a checked out source code repository or even a 
-released package like a .RPM or .ZIP
+# Why can't I just use version numbers?
+
+* **Version numbers suck**
 
 # What can bundleid do?
 
