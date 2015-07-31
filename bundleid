@@ -6,6 +6,7 @@ import re
 import platform
 from socket import gethostname
 import os
+import subprocess
 
 parser = argparse.ArgumentParser();
 parser.add_argument("--format", "-f", default = "ini", choices = ["ini", "json"]);
@@ -44,7 +45,12 @@ def getVersion():
 	return version
 
 def runCommand(cmd):
-	return ""
+	output = subprocess.Popen(cmd.split(" "), stdout=subprocess.PIPE).communicate()[0]
+	output = output.strip()
+	return output
+
+def getGitRevision():
+	return runCommand("git rev-parse HEAD")
 
 def isEmpty(value):
 	if value == None:
@@ -123,6 +129,8 @@ properties["buildhost.system"] = platform.system()
 properties["buildhost.release"] = platform.release()
 properties["buildhost.version"] = platform.version()
 properties["buildhost.hostname"] = gethostname()
+properties["git.revision"] = getGitRevision();
+properties["git.revision.short"] = getGitRevision()[0:7];
 
 if args.incrementMajor:
 	version['major'] = version['major'] + 1
