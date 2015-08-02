@@ -55,7 +55,7 @@ def getVersion():
 
 def runCommand(cmd):
 	output = subprocess.Popen(cmd.split(" "), stdout=subprocess.PIPE).communicate()[0]
-	output = output.strip()
+	output = output.strip().decode("utf-8")
 	return output
 
 def isGit():
