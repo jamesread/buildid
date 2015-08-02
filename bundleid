@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import argparse
 import time
@@ -7,15 +7,21 @@ import platform
 from socket import gethostname
 import os
 import subprocess
+import configparser
 
-parser = argparse.ArgumentParser();
-parser.add_argument("--format", "-f", default = "ini", choices = ["ini", "json"]);
-parser.add_argument("--platform", default = None)
-parser.add_argument("--incrementMajor", action = 'store_true')
-parser.add_argument("--incrementMinor", action = 'store_true')
-parser.add_argument("-q", "--quiet", action = 'store_true')
-parser.add_argument("-d", "--debug", action = 'store_true')
-args = parser.parse_args()
+argparser = argparse.ArgumentParser();
+argparser.add_argument("--format", "-f", default = "ini", choices = ["ini", "json"]);
+argparser.add_argument("--platform", default = None)
+argparser.add_argument("--incrementMajor", action = 'store_true')
+argparser.add_argument("--incrementMinor", action = 'store_true')
+argparser.add_argument("-q", "--quiet", action = 'store_true')
+argparser.add_argument("-d", "--debug", action = 'store_true')
+args = argparser.parse_args()
+
+cfgparser = configparser.SafeConfigParser()
+cfgparser.readfp(open("bundleid.cfg", "w+"));
+cfgparser.add_section("project");
+cfgparser["DEFAULT"]["title"] = "Untitled project"
 
 def getVersion():
 	version = {
@@ -38,9 +44,9 @@ def getVersion():
 			version['revision'] = int(m.group(3))
 			version['release'] = m.group(4)
 		elif args.debug:
-			print "VERSION file did not match regex."
+			print("VERSION file did not match regex.")
 	except Exception as e:
-		print e
+		print(e)
 
 	return version
 
@@ -48,6 +54,9 @@ def runCommand(cmd):
 	output = subprocess.Popen(cmd.split(" "), stdout=subprocess.PIPE).communicate()[0]
 	output = output.strip()
 	return output
+
+def isGit():
+	return os.path(".git").exists()
 
 def getGitRevision():
 	return runCommand("git rev-parse HEAD")
@@ -90,7 +99,10 @@ def getVersionFormattedPlatform():
 	return getVersionFormattedGnu(version)
 
 def getCommitTag():
-	return '00000'
+	if isGit():
+		return getGitRevision()
+	else:
+		return '00000'
 
 def isReleaseBuild():
 	return False
@@ -131,6 +143,7 @@ properties["buildhost.version"] = platform.version()
 properties["buildhost.hostname"] = gethostname()
 properties["git.revision"] = getGitRevision();
 properties["git.revision.short"] = getGitRevision()[0:7];
+properties["project.title"] = cfgparser.get("project", "title")
 
 if args.incrementMajor:
 	version['major'] = version['major'] + 1
@@ -143,12 +156,12 @@ if args.incrementMinor:
 if not args.quiet:
 	if args.format in ["properties", "ini"]:
 		for key in sorted(properties):
-			print key + "=" + str(properties[key])
+			print(key + "=" + str(properties[key]))
 
 	if args.format  == "json":
 		import json
 
-		print json.dumps(properties, indent = 4)
+		print(json.dumps(properties, indent = 4))
 
 saveVersion()
 os.environ["bundleid-version-formatted-gnu"] = getVersionFormattedGnu(version)
