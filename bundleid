@@ -18,10 +18,13 @@ argparser.add_argument("-q", "--quiet", action = 'store_true')
 argparser.add_argument("-d", "--debug", action = 'store_true')
 args = argparser.parse_args()
 
-cfgparser = configparser.SafeConfigParser()
-cfgparser.readfp(open("bundleid.cfg", "w+"));
-cfgparser.add_section("project");
-cfgparser["DEFAULT"]["title"] = "Untitled project"
+configDefaults = {
+	"title": "Untitled Project"
+}
+
+cfgparser = configparser.ConfigParser(defaults = configDefaults)
+cfgparser.add_section("project")
+cfgparser.read("bundleid.cfg");
 
 def getVersion():
 	version = {
