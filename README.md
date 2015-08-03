@@ -1,14 +1,21 @@
 # buildid
-`buildid` gathers up and maintains identity properties for a build, and makes 
-it easy to keep that build identity from compile-time through to run-time.
+`buildid` is a small utility that runs at build-time and gathers up identity 
+properties for a build, and makes it easy to keep that build identity from 
+build-time all the way through to run-time. 
 
-# Why can't I just use version numbers?
+The public site is published here; http://jamesread.github.io/buildid/
 
-* **Version numbers suck**
+## What is wrong with just using version numbers?
 
-# What can buildid do?
+* What does the number actually tell me?
+* Which branch did this build come from?
+* Which source commit does a build come from?
+* What happens if I forget to increment the version number?
+* Version numbers have no meaning in nightly or development builds
 
-## Developers fixing bugs want to know precisely where running code came from
+## What does this buildid utility do?
+
+### Developers fixing bugs want to know precisely where running code came from
 
 ```
 user@host: buildid 
@@ -17,7 +24,7 @@ BRANCH=new-feat-2
 BUILDDATE=2015-07-27
 ```
 
-## Sysadmins want to know what changed compared to an installed package
+### Sysadmins want to know what changed compared to an installed package
 
 If your stuff came from an **RPM**, no point in replicating working functionality.
 ```
@@ -34,7 +41,7 @@ ORIGINAL_PACKAGE=myproject-1.0.3-windows.zip
 CHANGED_FILES: etc/myproject/configuration.ini (M), /etc/myproject/bar (N)
 ```
 
-## Developers need version numbers for packages in a CI build
+### Developers need version numbers for packages in a CI build
 
 You can run `buildid` from a Jenkins job, for example.
 
@@ -48,9 +55,9 @@ PACKAGE_NAME-myproject-1.0.0-win
 PACKAGE_FILENAME-myproject-1.0.0-win.zip
 ```
 
-# FAQ 
+## FAQ 
 
-## How does this work?
+### How does this work?
 
 buildid generates a bunch of facts about your build by looking at files in the
 current directory, it can output these facts in various formats, with a 
@@ -60,6 +67,6 @@ You can define various presets too, in a configuration file `.buildid.cfg`
 
 In keep track of builds, a .buildid file is generated at build time. 
 
-## I want a `.buildid` file in different formats
+### I want a `.buildid` file in different formats
 
 Use the `-f` flag to specify `properties`, `json` or `yaml`. 
