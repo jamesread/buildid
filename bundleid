@@ -29,6 +29,12 @@ cfgparser = configparser.ConfigParser(defaults = configDefaults)
 cfgparser.add_section("project")
 cfgparser.read("bundleid.cfg");
 
+def printWarning(message):
+	print("[WARN] " + message);
+
+def printInfo(message):
+	print("[INFO] " + message);
+
 class BuildIdFileHandler:
 	def getFilename(self):
 		if args.filename == ".buildid":
@@ -50,18 +56,9 @@ class BuildIdFileHandler:
 		#raise NotImplementedError()
 
 	def write(self, properties):
-		handle = open(".buildid.ini", "w");
+		handle = open(self.getFilename(), "w");
 		handle.write(self.toString());
 		handle.close()
-
-class BuildIdFileHandlerJson(BuildIdFileHandler):
-	def write(self, properties):
-		import json
-
-		print(json.dumps(properties, indent = 4))
-
-	def getDefaultFilename(self):
-		return ".buildid.json"
 
 class BuildIdFileHandlerIni(BuildIdFileHandler):
 	def getDefaultFilename(self):
@@ -88,7 +85,6 @@ class BuildIdFileHandlerIni(BuildIdFileHandler):
 
 fileHandlers = {
 	"ini": BuildIdFileHandlerIni(),
-	"json": BuildIdFileHandlerJson()
 }
 
 def getVersion():
@@ -123,8 +119,21 @@ def runCommand(cmd):
 	output = output.strip().decode("utf-8")
 	return output
 
+def checkGitIgnore():
+	gitIgnoreFile = open(".gitignore", 'r');
+
+	content = gitIgnoreFile.read()
+
+	if "buildid" not in content:
+		printWarning("You should ignore your buildid in .gitignore.")
+
+	gitIgnoreFile.close()
+
+
 def isGit():
-	return os.path(".git").exists()
+	checkGitIgnore();
+		
+	return os.path.exists(".git")
 
 def getGitRevision():
 	return runCommand("git rev-parse HEAD")
@@ -207,8 +216,11 @@ def buildProperties():
 	properties["buildhost.release"] = platform.release()
 	properties["buildhost.version"] = platform.version()
 	properties["buildhost.hostname"] = gethostname()
-	properties["git.revision"] = getGitRevision();
-	properties["git.revision.short"] = getGitRevision()[0:7];
+
+	if isGit():
+		properties["git.revision"] = getGitRevision();
+		properties["git.revision.short"] = getGitRevision()[0:7];
+
 	properties["project.title"] = cfgparser.get("project", "title")
 
 	return properties
@@ -230,6 +242,8 @@ if args.newBuild:
 
 	if not args.quiet:
 		print(handler.toString())
+
+	printInfo("Wrote file: " + handler.getFilename());
 
 else:
 	properties = handler.read()
