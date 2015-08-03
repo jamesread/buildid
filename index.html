@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="description" content="buildid : Version numbers suck. Identify builds using lots of specific stats">
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>buildid</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/jamesread/buildid">View on GitHub</a>
+
+          <h1 id="project_title">buildid</h1>
+          <h2 id="project_tagline">Version numbers suck. Identify builds using lots of specific stats</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/jamesread/buildid/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/jamesread/buildid/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <p><code>buildid</code> gathers up and maintains identity properties for a build, and makes 
+it easy to keep that build identity from compile-time through to run-time.</p>
+
+<h1>
+<a id="why-cant-i-just-use-version-numbers" class="anchor" href="#why-cant-i-just-use-version-numbers" aria-hidden="true"><span class="octicon octicon-link"></span></a>Why can't I just use version numbers?</h1>
+
+<ul>
+<li><strong>Version numbers suck</strong></li>
+<li>Which commit did this come from?</li>
+<li>When and were was this built?</li>
+</ul>
+
+<h1>
+<a id="what-can-buildid-do" class="anchor" href="#what-can-buildid-do" aria-hidden="true"><span class="octicon octicon-link"></span></a>What can buildid do?</h1>
+
+<h2>
+<a id="developers-fixing-bugs-want-to-know-precisely-where-running-code-came-from" class="anchor" href="#developers-fixing-bugs-want-to-know-precisely-where-running-code-came-from" aria-hidden="true"><span class="octicon octicon-link"></span></a>Developers fixing bugs want to know precisely where running code came from</h2>
+
+<pre><code>user@host: buildid 
+COMMIT=dacab494b5b355e4a1a0e856c672b3cbd421ab0a
+BRANCH=new-feat-2
+BUILDDATE=2015-07-27
+</code></pre>
+
+<h2>
+<a id="sysadmins-want-to-know-what-changed-compared-to-an-installed-package" class="anchor" href="#sysadmins-want-to-know-what-changed-compared-to-an-installed-package" aria-hidden="true"><span class="octicon octicon-link"></span></a>Sysadmins want to know what changed compared to an installed package</h2>
+
+<p>If your stuff came from an <strong>RPM</strong>, no point in replicating working functionality.</p>
+
+<pre><code>user@host: cd /opt/myproject/
+user@host: ./buildid --changes
+myproject was installed via an RPM, use \`rpm -qv myproject\` to verify it.
+</code></pre>
+
+<p>But if you released a <strong>zip</strong> file, this is how it would work;</p>
+
+<pre><code>user@host: buildid --changes
+ORIGINAL_PACKAGE=myproject-1.0.3-windows.zip
+CHANGED_FILES: etc/myproject/configuration.ini (M), /etc/myproject/bar (N)
+</code></pre>
+
+<h2>
+<a id="developers-need-version-numbers-for-packages-in-a-ci-build" class="anchor" href="#developers-need-version-numbers-for-packages-in-a-ci-build" aria-hidden="true"><span class="octicon octicon-link"></span></a>Developers need version numbers for packages in a CI build</h2>
+
+<p>You can run <code>buildid</code> from a Jenkins job, for example.</p>
+
+<pre><code>user@host: buildid
+COMMIT=dacab494b5b355e4a1a0e856c672b3cbd421ab0a
+BRANCH=new-feat-2
+TYPE=nightly
+VERSION_STRING_SIMPLE=1.0.0
+PACKAGE_NAME-myproject-1.0.0-win
+PACKAGE_FILENAME-myproject-1.0.0-win.zip
+</code></pre>
+
+<h1>
+<a id="faq" class="anchor" href="#faq" aria-hidden="true"><span class="octicon octicon-link"></span></a>FAQ</h1>
+
+<h2>
+<a id="how-does-this-work" class="anchor" href="#how-does-this-work" aria-hidden="true"><span class="octicon octicon-link"></span></a>How does this work?</h2>
+
+<p>buildid generates a bunch of facts about your build by looking at files in the
+current directory, it can output these facts in various formats, with a 
+properties file being the default. </p>
+
+<p>You can define various presets too, in a configuration file <code>.buildid.cfg</code></p>
+
+<p>In keep track of builds, a .buildid file is generated at build time. </p>
+
+<h2>
+<a id="i-want-a-buildid-file-in-different-formats" class="anchor" href="#i-want-a-buildid-file-in-different-formats" aria-hidden="true"><span class="octicon octicon-link"></span></a>I want a <code>.buildid</code> file in different formats</h2>
+
+<p>Use the <code>-f</code> flag to specify <code>properties</code>, <code>json</code> or <code>yaml</code>. </p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">buildid maintained by <a href="https://github.com/jamesread">jamesread</a></p>
+        <p>Published with <a href="https://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
