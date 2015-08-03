@@ -15,16 +15,18 @@ The public site is published here; http://jamesread.github.io/buildid/
 
 ## What does this buildid utility do?
 
-### Developers fixing bugs want to know precisely where running code came from
+### Developers: Where did this running code came from?
 
 ```
 user@host: buildid 
-COMMIT=dacab494b5b355e4a1a0e856c672b3cbd421ab0a
-BRANCH=new-feat-2
-BUILDDATE=2015-07-27
+...
+git.commit=dacab494b5b355e4a1a0e856c672b3cbd421ab0a
+git.branch=new-feat-2
+timestamp=1438623621
+...
 ```
 
-### Sysadmins want to know what changed compared to an installed package
+### Sysadmins: What changed compared to an installed package?
 
 If your stuff came from an **RPM**, no point in replicating working functionality.
 ```
