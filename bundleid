@@ -10,12 +10,15 @@ import subprocess
 import configparser
 
 argparser = argparse.ArgumentParser();
+argparser.add_argument("-n", "--newBuild", action = 'store_true');
 argparser.add_argument("--format", "-f", default = "ini", choices = ["ini", "json"]);
 argparser.add_argument("--platform", default = None)
 argparser.add_argument("--incrementMajor", action = 'store_true')
 argparser.add_argument("--incrementMinor", action = 'store_true')
-argparser.add_argument("-q", "--quiet", action = 'store_true')
 argparser.add_argument("-d", "--debug", action = 'store_true')
+argparser.add_argument("-k", "--key", help = "print the value of just one key")
+argparser.add_argument("-w", "--filename", default = ".buildid")
+argparser.add_argument("-q", "--quiet", action = 'store_true')
 args = argparser.parse_args()
 
 configDefaults = {
@@ -25,6 +28,68 @@ configDefaults = {
 cfgparser = configparser.ConfigParser(defaults = configDefaults)
 cfgparser.add_section("project")
 cfgparser.read("bundleid.cfg");
+
+class BuildIdFileHandler:
+	def getFilename(self):
+		if args.filename == ".buildid":
+			return self.getDefaultFilename()
+		else:
+			return args.filename
+
+	def getDefaultFilename(self):
+		return args.filename
+	
+	def fileExists(self):
+		return os.path.exists(self.getFilename())
+
+	def toString(self):
+		raise NotImplementedError()
+
+	def read(self):
+		pass
+		#raise NotImplementedError()
+
+	def write(self, properties):
+		handle = open(".buildid.ini", "w");
+		handle.write(self.toString());
+		handle.close()
+
+class BuildIdFileHandlerJson(BuildIdFileHandler):
+	def write(self, properties):
+		import json
+
+		print(json.dumps(properties, indent = 4))
+
+	def getDefaultFilename(self):
+		return ".buildid.json"
+
+class BuildIdFileHandlerIni(BuildIdFileHandler):
+	def getDefaultFilename(self):
+		return ".buildid.ini"
+
+	def toString(self):
+		buf = ""
+		for key in sorted(properties):
+			buf += (key + "=" + str(properties[key])) + "\n"
+
+		return buf.strip()
+
+	def read(self):
+		properties = dict()
+
+		content = open(self.getFilename(), 'r').readlines()
+
+		for line in content:
+			key, value = line.strip().split("=");
+			
+			properties[key] = value
+
+		return properties
+
+fileHandlers = {
+	"ini": BuildIdFileHandlerIni(),
+	"json": BuildIdFileHandlerJson()
+}
 
 def getVersion():
 	version = {
@@ -123,49 +188,60 @@ def isEverythingCommited():
 	return False
 
 def saveVersion():
-	print("save version: " + getVersionFormattedGnu(version))
 	f = open("VERSION", "w")
 	f.write(getVersionFormattedGnu(version))
 	f.close()
 
-properties = dict()
-properties["timestamp"] = str(int(time.time()))
+def buildProperties():
+	properties["timestamp"] = str(int(time.time()))
 
-version = getVersion()
+	properties["version.major"] = version['major']
+	properties["version.minor"] = version['minor']
+	properties["version.release"] = version['release']
+	properties["version.revision"] = version['revision']
+	properties["version.formatted.gnu"] = getVersionFormattedGnu(version)
+	properties["version.formatted.win"] = getVersionFormattedWin(version)
+	properties["tag"] = getPackageTag()
+	properties["buildhost.platform"] = platform.platform()
+	properties["buildhost.system"] = platform.system()
+	properties["buildhost.release"] = platform.release()
+	properties["buildhost.version"] = platform.version()
+	properties["buildhost.hostname"] = gethostname()
+	properties["git.revision"] = getGitRevision();
+	properties["git.revision.short"] = getGitRevision()[0:7];
+	properties["project.title"] = cfgparser.get("project", "title")
 
-properties["version.major"] = version['major']
-properties["version.minor"] = version['minor']
-properties["version.release"] = version['release']
-properties["version.revsision"] = version['revision']
-properties["version.formatted.gnu"] = getVersionFormattedGnu(version)
-properties["version.formatted.win"] = getVersionFormattedWin(version)
-properties["tag"] = getPackageTag()
-properties["buildhost.platform"] = platform.platform()
-properties["buildhost.system"] = platform.system()
-properties["buildhost.release"] = platform.release()
-properties["buildhost.version"] = platform.version()
-properties["buildhost.hostname"] = gethostname()
-properties["git.revision"] = getGitRevision();
-properties["git.revision.short"] = getGitRevision()[0:7];
-properties["project.title"] = cfgparser.get("project", "title")
+	return properties
 
 if args.incrementMajor:
 	version['major'] = version['major'] + 1
-	args.quiet = True
+	saveVersion()
 
 if args.incrementMinor:
 	version['minor'] = version['minor'] + 1
-	args.quiet = True
+	saveVersion()
 
-if not args.quiet:
-	if args.format in ["properties", "ini"]:
-		for key in sorted(properties):
-			print(key + "=" + str(properties[key]))
+properties = dict()
+version = getVersion()
+handler = fileHandlers[args.format]
 
-	if args.format  == "json":
-		import json
+if args.newBuild:
+	handler.write(buildProperties());
 
-		print(json.dumps(properties, indent = 4))
+	if not args.quiet:
+		print(handler.toString())
 
-saveVersion()
-os.environ["bundleid-version-formatted-gnu"] = getVersionFormattedGnu(version)
+else:
+	properties = handler.read()
+
+	if args.key:
+		if args.key in properties:
+			print(properties[args.key])
+		else: 
+			print(args.key + " was not found.");
+	else:
+		if handler.fileExists():
+			if not args.quiet:
+				print(handler.toString())
+		else:
+			print("There is no bundleid file. Use -n to create a new build.")
