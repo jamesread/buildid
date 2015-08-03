@@ -1,9 +1,9 @@
 default:
-	rm -rf dist/bundleid
-	mkdir -p dist/bundleid/
+	rm -rf dist/buildid
+	mkdir -p dist/buildid/
 
-	# run bundleid on itself.
-	./bundleid -f ini > dist/bundleid/bundleid.ini
+	# run buildid on itself.
+	./buildid -f ini > dist/buildid/buildid.ini
 
-	cp bundleid dist/bundleid/
-	cd dist && zip -r bundleid.zip bundleid
+	cp buildid dist/buildid/
+	cd dist && zip -r buildid.zip buildid

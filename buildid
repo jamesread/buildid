@@ -27,7 +27,7 @@ configDefaults = {
 
 cfgparser = configparser.ConfigParser(defaults = configDefaults)
 cfgparser.add_section("project")
-cfgparser.read("bundleid.cfg");
+cfgparser.read("buildid.cfg");
 
 def printWarning(message):
 	print("[WARN] " + message);
@@ -258,4 +258,4 @@ else:
 			if not args.quiet:
 				print(handler.toString())
 		else:
-			print("There is no bundleid file. Use -n to create a new build.")
+			print("There is no buildid file. Use -n to create a new build.")
