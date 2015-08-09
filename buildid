@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python
 
 import argparse
 import time
@@ -7,7 +7,7 @@ import platform
 from socket import gethostname
 import os
 import subprocess
-import configparser
+import ConfigParser as configparser
 
 argparser = argparse.ArgumentParser();
 argparser.add_argument("-n", "--newBuild", action = 'store_true');
