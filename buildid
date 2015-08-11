@@ -19,6 +19,7 @@ argparser.add_argument("-d", "--debug", action = 'store_true')
 argparser.add_argument("-k", "--key", help = "print the value of just one key")
 argparser.add_argument("-w", "--filename", default = ".buildid")
 argparser.add_argument("-q", "--quiet", action = 'store_true')
+argparser.add_argument("-p", "--plain", action = "store_true")
 args = argparser.parse_args()
 
 configDefaults = {
@@ -30,10 +31,20 @@ cfgparser.add_section("project")
 cfgparser.read("buildid.cfg");
 
 def printWarning(message):
-	print("[WARN] " + message);
+	printPrefix("WARN", message, 3)
 
 def printInfo(message):
-	print("[INFO] " + message);
+	printPrefix("INFO", message, 4)
+
+def printPrefix(prefix, message, color = None):
+	color = ""
+
+	if args.plain:
+		endColor = ""
+	else:
+		endColor = ""
+
+	print("[" + color + prefix + endColor + "] " + message);
 
 class BuildIdFileHandler:
 	def getFilename(self):
@@ -256,6 +267,8 @@ else:
 	else:
 		if handler.fileExists():
 			if not args.quiet:
+				printInfo("Reading build from buildid file: " + handler.getFilename())
+
 				print(handler.toString())
 		else:
 			print("There is no buildid file. Use -n to create a new build.")
