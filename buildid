@@ -161,6 +161,9 @@ def isEmpty(value):
 
 	return False
 
+def getVersionFormattedShort(version):
+	return str(version['major']) + "." + str(version["minor"]) + "." + str(version['revision'])
+
 def getVersionFormattedGnu(version):
 	if isEmpty(version['release']):
 		rel = ''
@@ -220,6 +223,7 @@ def buildProperties():
 	properties["version.release"] = version['release']
 	properties["version.revision"] = version['revision']
 	properties["version.formatted.gnu"] = getVersionFormattedGnu(version)
+	properties["version.formatted.short"] = getVersionFormattedShort(version)
 	properties["version.formatted.win"] = getVersionFormattedWin(version)
 	properties["tag"] = getPackageTag()
 	properties["buildhost.platform"] = platform.platform()
