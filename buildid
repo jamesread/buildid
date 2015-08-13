@@ -8,6 +8,7 @@ from socket import gethostname
 import os
 import subprocess
 import ConfigParser as configparser
+import abc
 
 argparser = argparse.ArgumentParser();
 argparser.add_argument("-n", "--newBuild", action = 'store_true');
@@ -17,6 +18,7 @@ argparser.add_argument("--incrementMajor", action = 'store_true')
 argparser.add_argument("--incrementMinor", action = 'store_true')
 argparser.add_argument("-d", "--debug", action = 'store_true')
 argparser.add_argument("-k", "--key", help = "print the value of just one key")
+argparser.add_argument("-ks", "--keySearch", help = "print the values where the key matches this search term")
 argparser.add_argument("-w", "--filename", default = ".buildid")
 argparser.add_argument("-q", "--quiet", action = 'store_true')
 argparser.add_argument("-p", "--plain", action = "store_true")
@@ -29,6 +31,55 @@ configDefaults = {
 cfgparser = configparser.ConfigParser(defaults = configDefaults)
 cfgparser.add_section("project")
 cfgparser.read("buildid.cfg");
+
+class VersionReader():
+	@abc.abstractmethod
+	def read(self):
+		pass
+
+class VersionReaderPlainFile(VersionReader):
+	def read(self):
+		version = {
+			"major": 0,
+			"minor": 0,
+			"revision": 0,
+			"release": ''
+		}
+
+		try:
+			versionFile = open('VERSION', 'r')
+			content = versionFile.read()
+			versionFile.close()
+
+			m = re.search("(\d).(\d).(\d)-?(.+?)", content)
+
+			if m != None:
+				version['major'] = int(m.group(1))
+				version['minor'] = int(m.group(2))
+				version['revision'] = int(m.group(3))
+				version['release'] = m.group(4)
+			elif args.debug:
+				print("VERSION file did not match regex.")
+		except IOError as e:
+			pass
+		except Exception as e:
+			print(e)
+
+		return version
+
+class VersionWriter():
+	@abc.abstractmethod
+	def write():
+		pass
+
+class VersionWriterPlainFile(VersionWriter):
+	def write2():
+		f = open("VERSION", "w")
+		f.write(getVersionFormattedGnu(version))
+		f.close()
+
+versionReaders = [ VersionReaderPlainFile() ]
+versionWriters = [ VersionWriterPlainFile() ]
 
 def printWarning(message):
 	printPrefix("WARN", message, 3)
@@ -78,9 +129,13 @@ class BuildIdFileHandlerIni(BuildIdFileHandler):
 	def toString(self):
 		buf = ""
 		for key in sorted(properties):
-			buf += (key + "=" + str(properties[key])) + "\n"
+			buf += self.toStringSingle(key) + "\n"
 
 		return buf.strip()
+
+	def toStringSingle(self, key):
+		return (key + "=" + str(properties[key]))
+
 
 	def read(self):
 		properties = dict()
@@ -99,31 +154,8 @@ fileHandlers = {
 }
 
 def getVersion():
-	version = {
-		"major": 0,
-		"minor": 0,
-		"revision": 0,
-		"release": ''
-	}
-
-	try:
-		versionFile = open('VERSION', 'r')
-		content = versionFile.read()
-		versionFile.close()
-
-		m = re.search("(\d).(\d).(\d)-?(.+?)", content)
-
-		if m != None:
-			version['major'] = int(m.group(1))
-			version['minor'] = int(m.group(2))
-			version['revision'] = int(m.group(3))
-			version['release'] = m.group(4)
-		elif args.debug:
-			print("VERSION file did not match regex.")
-	except Exception as e:
-		print(e)
-
-	return version
+	for reader in versionReaders:
+		return reader.read() # first one only
 
 def runCommand(cmd):
 	output = subprocess.Popen(cmd.split(" "), stdout=subprocess.PIPE).communicate()[0]
@@ -131,6 +163,9 @@ def runCommand(cmd):
 	return output
 
 def checkGitIgnore():
+	if not os.path.exists(".gitignore"):
+		return 
+
 	gitIgnoreFile = open(".gitignore", 'r');
 
 	content = gitIgnoreFile.read()
@@ -211,9 +246,8 @@ def isEverythingCommited():
 	return False
 
 def saveVersion():
-	f = open("VERSION", "w")
-	f.write(getVersionFormattedGnu(version))
-	f.close()
+	for writer in versionWriters:
+		writer.write(getVersionFormattedGnu(version))
 
 def buildProperties():
 	properties["timestamp"] = str(int(time.time()))
@@ -255,24 +289,28 @@ handler = fileHandlers[args.format]
 if args.newBuild:
 	handler.write(buildProperties());
 
-	if not args.quiet:
-		print(handler.toString())
-
-	printInfo("Wrote file: " + handler.getFilename());
+	printInfo("Wrote file: " + handler.getFilename() + ". View the file or jst run `buildid` again to see all the properties.");
 
 else:
-	properties = handler.read()
-
-	if args.key:
-		if args.key in properties:
-			print(properties[args.key])
-		else: 
-			print(args.key + " was not found.");
+	if not handler.fileExists():
+		printInfo("There is no buildid file. Use -n to create a new build.")
 	else:
-		if handler.fileExists():
+		properties = handler.read()
+
+		if args.key:
+			if args.key in properties:
+				print(properties[args.key])
+			else: 
+				print(args.key + " was not found.");
+		elif args.keySearch:
+			for key in properties:
+				if args.keySearch in key:
+					print(handler.toStringSingle(key))
+		else:
 			if not args.quiet:
 				printInfo("Reading build from buildid file: " + handler.getFilename())
+				printInfo("You can output a single property with -k <property-name>")
+				printInfo("or see all these properties again without this message with -q");
+				print("")
 
-				print(handler.toString())
-		else:
-			print("There is no buildid file. Use -n to create a new build.")
+			print(handler.toString())
