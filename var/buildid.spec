@@ -19,14 +19,14 @@ buildid
 %setup -q
 
 %build
-mkdir -p %{buildroot}/usr/sbin/
-cp buildid %{buildroot}/usr/sbin/
+mkdir -p "%{buildroot}/usr/sbin/"
+cp buildid "%{buildroot}/usr/sbin/"
 
-mkdir -p %{buildroot}/usr/share/doc/buildid/
-cp README.md %{buildroot}/usr/share/doc/buildid/
+mkdir -p "%{buildroot}/usr/share/doc/buildid/"
+cp README.md "%{buildroot}/usr/share/doc/buildid/"
 
-mkdir -p %{buildroot}/usr/share/man/man1/
-cp doc/buildid.1.gz %{buildroot}/usr/share/man/man1/
+mkdir -p "%{buildroot}/usr/share/man/man1/"
+cp doc/buildid.1.gz "%{buildroot}/usr/share/man/man1/"
 
 %files
 /usr/sbin/buildid
