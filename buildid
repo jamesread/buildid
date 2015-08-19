@@ -32,12 +32,38 @@ cfgparser = configparser.ConfigParser(defaults = configDefaults)
 cfgparser.add_section("project")
 cfgparser.read("buildid.cfg");
 
+def parseConfigVersionWriter(section, cfgparser):
+	translator = cfgparser.get(section, "translator")
+
+	writerConfig = dict()
+	
+	for cfg in cfgparser.items(section):
+		writerConfig[cfg[0]] = cfg[1]
+
+	if translator == "PlainFile":
+		return VersionTranslatorPlainFile(writerConfig)
+
 class VersionReader():
+	def name(self):
+		return self.__class__.__name__
+
+	def isUsable(self):
+		return True
+
 	@abc.abstractmethod
 	def read(self):
 		pass
 
-class VersionReaderPlainFile(VersionReader):
+class VersionWriter():
+	@abc.abstractmethod
+	def write():
+		pass
+
+class VersionTranslatorPlainFile(VersionReader, VersionWriter):
+	def __init__(self, config = None):
+		pass
+#		print config
+
 	def read(self):
 		version = {
 			"major": 0,
@@ -67,19 +93,13 @@ class VersionReaderPlainFile(VersionReader):
 
 		return version
 
-class VersionWriter():
-	@abc.abstractmethod
 	def write():
-		pass
-
-class VersionWriterPlainFile(VersionWriter):
-	def write2():
 		f = open("VERSION", "w")
 		f.write(getVersionFormattedGnu(version))
 		f.close()
 
-versionReaders = [ VersionReaderPlainFile() ]
-versionWriters = [ VersionWriterPlainFile() ]
+versionReaders = [ VersionTranslatorPlainFile() ]
+versionWriters = [ VersionTranslatorPlainFile() ]
 
 def printWarning(message):
 	printPrefix("WARN", message, 3)
@@ -153,9 +173,14 @@ fileHandlers = {
 	"ini": BuildIdFileHandlerIni(),
 }
 
-def getVersion():
+def getVersionFromReaders():
 	for reader in versionReaders:
-		return reader.read() # first one only
+		if reader.isUsable():
+			versionFromReader = reader.read()
+
+			printInfo("Reading version using: " + reader.name() + " = " + getVersionFormattedGnu(versionFromReader))
+
+			return versionFromReader # first one only at the mo
 
 def runCommand(cmd):
 	output = subprocess.Popen(cmd.split(" "), stdout=subprocess.PIPE).communicate()[0]
@@ -274,6 +299,22 @@ def buildProperties():
 
 	return properties
 
+################################################################################
+
+for section in cfgparser.sections():
+	if cfgparser.has_option(section, "type"):
+		typeOfThing = cfgparser.get(section, "type")
+
+		if typeOfThing == "writer":
+			writer = parseConfigVersionWriter(section, cfgparser)
+
+			versionWriters.append(writer)
+
+		if typeOfThing == "reader":
+			reader = parseConfigVersionReader(section, cfgparser)
+
+			versionReaders.append(reader)
+
 if args.incrementMajor:
 	version['major'] = version['major'] + 1
 	saveVersion()
@@ -283,10 +324,11 @@ if args.incrementMinor:
 	saveVersion()
 
 properties = dict()
-version = getVersion()
 handler = fileHandlers[args.format]
 
 if args.newBuild:
+	version = getVersionFromReaders()
+
 	handler.write(buildProperties());
 
 	printInfo("Wrote file: " + handler.getFilename() + ". View the file or jst run `buildid` again to see all the properties.");
@@ -308,7 +350,7 @@ else:
 					print(handler.toStringSingle(key))
 		else:
 			if not args.quiet:
-				printInfo("Reading build from buildid file: " + handler.getFilename())
+				printInfo("Printing buildid from file: " + handler.getFilename())
 				printInfo("You can output a single property with -k <property-name>")
 				printInfo("or see all these properties again without this message with -q");
 				print("")
