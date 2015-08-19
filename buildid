@@ -79,7 +79,7 @@ class VersionTranslatorPlainFile(VersionReader, VersionWriter):
 			content = versionFile.read()
 			versionFile.close()
 
-			m = re.search("(\d).(\d).(\d)-?(.+?)", content)
+			m = re.search("(\d+)\.(\d+)\.(\d+)[\.-]*(\d*)", content)
 
 			if m != None:
 				version['major'] = int(m.group(1))
