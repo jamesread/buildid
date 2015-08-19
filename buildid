@@ -10,6 +10,13 @@ import subprocess
 import ConfigParser as configparser
 import abc
 
+try:
+	from colorama import init as coloramainit, Fore, Style
+
+	coloramainit()
+except:
+	pass
+
 argparser = argparse.ArgumentParser();
 argparser.add_argument("-n", "--newBuild", action = 'store_true');
 argparser.add_argument("--format", "-f", default = "ini", choices = ["ini", "json"]);
@@ -32,16 +39,11 @@ cfgparser = configparser.ConfigParser(defaults = configDefaults)
 cfgparser.add_section("project")
 cfgparser.read("buildid.cfg");
 
-def parseConfigVersionWriter(section, cfgparser):
-	translator = cfgparser.get(section, "translator")
-
-	writerConfig = dict()
-	
-	for cfg in cfgparser.items(section):
-		writerConfig[cfg[0]] = cfg[1]
+def parseVersionTranslator(config):
+	translator = config["translator"]
 
 	if translator == "PlainFile":
-		return VersionTranslatorPlainFile(writerConfig)
+		inst = VersionTranslatorPlainFile(config)
 
 class VersionReader():
 	def name(self):
@@ -101,21 +103,40 @@ class VersionTranslatorPlainFile(VersionReader, VersionWriter):
 versionReaders = [ VersionTranslatorPlainFile() ]
 versionWriters = [ VersionTranslatorPlainFile() ]
 
-def printWarning(message):
+def printWarn(message):
 	printPrefix("WARN", message, 3)
 
 def printInfo(message):
 	printPrefix("INFO", message, 4)
 
 def printPrefix(prefix, message, color = None):
-	color = ""
+	startColor = ""
+	endColor = ""
+
+	if hasColors():
+		if color == 3:
+			startColor = Style.BRIGHT + Fore.MAGENTA
+			endColor = Style.RESET_ALL
+
+		if color == 4: 
+			startColor = Style.BRIGHT + Fore.BLUE
+			endColor = Style.RESET_ALL
+
+	print("[" + startColor + prefix + endColor + "] " + message);
+
+def hasColors():
+	hasColors = True 
+
+	try: 
+		if Fore.BLACK:
+			pass
+	except:
+		hasColors = False
 
 	if args.plain:
-		endColor = ""
-	else:
-		endColor = ""
+		hasColors = False
 
-	print("[" + color + prefix + endColor + "] " + message);
+	return hasColors
 
 class BuildIdFileHandler:
 	def getFilename(self):
@@ -196,7 +217,7 @@ def checkGitIgnore():
 	content = gitIgnoreFile.read()
 
 	if "buildid" not in content:
-		printWarning("You should ignore your buildid in .gitignore.")
+		printWarn("You should ignore your buildid in .gitignore.")
 
 	gitIgnoreFile.close()
 
@@ -305,15 +326,18 @@ for section in cfgparser.sections():
 	if cfgparser.has_option(section, "type"):
 		typeOfThing = cfgparser.get(section, "type")
 
-		if typeOfThing == "writer":
-			writer = parseConfigVersionWriter(section, cfgparser)
+		translatorConfig = dict()
+		
+		for cfg in cfgparser.items(section):
+			translatorConfig[cfg[0]] = cfg[1]
 
-			versionWriters.append(writer)
+		inst = parseVersionTranslator(translatorConfig)
 
-		if typeOfThing == "reader":
-			reader = parseConfigVersionReader(section, cfgparser)
-
+		if inst is VersionReader:
 			versionReaders.append(reader)
+
+		if inst is VersionWriter:
+			versionWriters.append(writer)
 
 if args.incrementMajor:
 	version['major'] = version['major'] + 1
