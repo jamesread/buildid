@@ -9,6 +9,7 @@ import os
 import subprocess
 import ConfigParser as configparser
 import abc
+from lxml import etree
 
 try:
 	from colorama import init as coloramainit, Fore, Style
@@ -49,7 +50,7 @@ class VersionReader():
 	def name(self):
 		return self.__class__.__name__
 
-	def isUsable(self):
+	def isReadable(self):
 		return True
 
 	@abc.abstractmethod
@@ -67,27 +68,14 @@ class VersionTranslatorPlainFile(VersionReader, VersionWriter):
 #		print config
 
 	def read(self):
-		version = {
-			"major": 0,
-			"minor": 0,
-			"revision": 0,
-			"release": ''
-		}
-
+		version = zeroVersion()
+	
 		try:
 			versionFile = open('VERSION', 'r')
 			content = versionFile.read()
 			versionFile.close()
 
-			m = re.search("(\d+)\.(\d+)\.(\d+)[\.-]*(\d*)", content)
-
-			if m != None:
-				version['major'] = int(m.group(1))
-				version['minor'] = int(m.group(2))
-				version['revision'] = int(m.group(3))
-				version['release'] = m.group(4)
-			elif args.debug:
-				print("VERSION file did not match regex.")
+			version = parseVersion(content)
 		except IOError as e:
 			pass
 		except Exception as e:
@@ -100,7 +88,58 @@ class VersionTranslatorPlainFile(VersionReader, VersionWriter):
 		f.write(getVersionFormattedGnu(version))
 		f.close()
 
-versionReaders = [ VersionTranslatorPlainFile() ]
+	def isReadable(self):
+		return os.path.exists("VERSION")
+
+class VersionTranslatorPomFile(VersionReader):
+	def isReadble(self):
+		return os.path.exists("pom.xml")
+
+	def read(self):
+		version = zeroVersion()
+
+		version = reallyCheekyXpath("pom.xml", "//project/version/text()")[0]
+		version = parseVersion(version)
+
+		return version
+
+def parseVersion(versionString):
+	version = zeroVersion()
+
+	m = re.search("(\d+)\.(\d+)\.(\d+)[\.-]*(\d*)", versionString)
+
+	if m != None:
+		version['major'] = int(m.group(1))
+		version['minor'] = int(m.group(2))
+		version['revision'] = int(m.group(3))
+		version['release'] = m.group(4)
+	elif args.debug:
+		print("VERSION file did not match regex.")
+
+	return version
+
+def zeroVersion():
+	return {
+		"major": 0,
+		"minor": 0,
+		"revision": 0,
+		"release": ''
+	}
+
+def reallyCheekyXpath(filename, xpath):
+	f = open(filename, "r")
+	xml = f.read()
+	f.close()
+
+	# aherm
+	xml = re.sub('xmlns=".+"', "", xml)
+
+	pomTree = etree.fromstring(xml)
+	res = pomTree.xpath(xpath)
+
+	return res
+
+versionReaders = [ VersionTranslatorPlainFile(), VersionTranslatorPomFile() ]
 versionWriters = [ VersionTranslatorPlainFile() ]
 
 def printWarn(message):
@@ -196,7 +235,7 @@ fileHandlers = {
 
 def getVersionFromReaders():
 	for reader in versionReaders:
-		if reader.isUsable():
+		if reader.isReadable():
 			versionFromReader = reader.read()
 
 			printInfo("Reading version using: " + reader.name() + " = " + getVersionFormattedGnu(versionFromReader))
