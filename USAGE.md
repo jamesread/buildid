@@ -17,11 +17,16 @@ Cannot quite figure out the best way to do this with Gradle yet. ;( Here is
 what I have so far... 
 
 ```
-"buildid -n".exec()
 
-Properties buildInfo = new Properties()
-buildid.load(new File(".buildid.ini").newReader());
+def generateBuildId() {
+	"buildid -n".exec()
 
+	Properties buildInfo = new Properties()
+	buildid.load(new File(".buildid.ini").newReader());
+
+	return buildid
+}
+
+Properties buildid = generateBuildId()
 version = buildid.get("version.formatted.gnu");
-gitRevision = buildid.get("git.revision")
 ```
