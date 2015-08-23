@@ -20,7 +20,7 @@ except:
 
 argparser = argparse.ArgumentParser();
 argparser.add_argument("-n", "--newBuild", action = 'store_true');
-argparser.add_argument("--format", "-f", default = "ini", choices = ["ini", "json"]);
+argparser.add_argument("--format", "-f", default = "ini", choices = ["ini"]);
 argparser.add_argument("--platform", default = None)
 argparser.add_argument("--incrementMajor", action = 'store_true')
 argparser.add_argument("--incrementMinor", action = 'store_true')
@@ -98,8 +98,11 @@ class VersionTranslatorPomFile(VersionReader):
 	def read(self):
 		version = zeroVersion()
 
-		version = reallyCheekyXpath("pom.xml", "//project/version/text()")[0]
-		version = parseVersion(version)
+		try:
+			version = reallyCheekyXpath("pom.xml", "//project/version/text()")[0]
+			version = parseVersion(version)
+		except:
+			pass
 
 		return version
 
@@ -204,7 +207,7 @@ class BuildIdFileHandler:
 
 class BuildIdFileHandlerIni(BuildIdFileHandler):
 	def getDefaultFilename(self):
-		return ".buildid.ini"
+		return ".buildid"
 
 	def toString(self):
 		buf = ""
@@ -243,8 +246,9 @@ def getVersionFromReaders():
 			return versionFromReader # first one only at the mo
 
 def runCommand(cmd):
-	output = subprocess.Popen(cmd.split(" "), stdout=subprocess.PIPE).communicate()[0]
-	output = output.strip().decode("utf-8")
+	process = subprocess.Popen(cmd, shell = True, stdout=subprocess.PIPE)
+	output = "".join(process.stdout.readlines()).strip()
+
 	return output
 
 def checkGitIgnore():
@@ -268,6 +272,9 @@ def isGit():
 
 def getGitRevision():
 	return runCommand("git rev-parse HEAD")
+
+def getGitBranch():
+	return runCommand("git branch | awk '{print $2}'")
 
 def isEmpty(value):
 	if value == None:
@@ -352,6 +359,7 @@ def buildProperties():
 	properties["buildhost.hostname"] = gethostname()
 
 	if isGit():
+		properties["git.branch"] = getGitBranch()
 		properties["git.revision"] = getGitRevision();
 		properties["git.revision.short"] = getGitRevision()[0:7];
 
