@@ -1,5 +1,5 @@
 Name:		buildid
-Version:	1.3.0
+Version:	1.4.0
 Release:	1%{?dist}
 Summary:	Gathers information about a code build for reuse by packaging and deployment
 BuildArch:	noarch
