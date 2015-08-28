@@ -18,6 +18,34 @@ try:
 except:
 	pass
 
+class VersionIdentifier:
+	major = 0
+	minor = 0
+	revision = 0
+	release = ""
+
+	def getFormattedShort(self):
+		return str(self.major) + "." + str(version.minor) + "." + str(version.revision)
+
+	def getFormattedGnu(self):
+		if isEmpty(self.release):
+			rel = ''
+		else:
+			rel = '-' + str(self.release)
+
+		return str(self.major) + "." + str(self.minor) + "." + str(self.revision) + rel
+
+	def getFormattedWin(self):
+		if isEmpty(self.release):
+			rel = '.0';
+		else:
+			rel = '.' + str(version['release'])
+
+		return str(self.major) + "." + str(self.minor) + "." + str(self.revision) + rel
+
+	def getFormattedPlatform(self):
+		return self.getFormattedGnu()
+
 argparser = argparse.ArgumentParser();
 argparser.add_argument("-n", "--newBuild", action = 'store_true');
 argparser.add_argument("--format", "-f", default = "ini", choices = ["ini"]);
@@ -30,6 +58,7 @@ argparser.add_argument("-K", "--keySearch", help = "print the values where the k
 argparser.add_argument("-w", "--filename", default = ".buildid")
 argparser.add_argument("-q", "--quiet", action = 'store_true')
 argparser.add_argument("-p", "--plain", action = "store_true")
+argparser.add_argument("-u", "--update", action = "store_true")
 args = argparser.parse_args()
 
 configDefaults = {
@@ -41,15 +70,27 @@ cfgparser.add_section("project")
 cfgparser.read("buildid.cfg");
 
 def parseVersionTranslator(config):
-	translator = config["translator"]
+	translator = config["translator"].lower()
 
-	if translator == "PlainFile":
-		inst = VersionTranslatorPlainFile(config)
+	if translator == "plainfile":
+		return VersionTranslatorPlainFile(config)
 
-class VersionReader():
+	if translator == "rpmspec":
+		return VersionTranslatorRpmSpec(config)
+
+	printWarn("Translator not supported: " + translator)
+
+class VersionTranslator:
+	def __init__(self, config = None):
+		self.config = config
+
 	def name(self):
 		return self.__class__.__name__
 
+	def __str__(self):
+		return self.name()
+
+class VersionReader(VersionTranslator):
 	def isReadable(self):
 		return True
 
@@ -57,18 +98,18 @@ class VersionReader():
 	def read(self):
 		pass
 
-class VersionWriter():
+class VersionWriter(VersionTranslator):
 	@abc.abstractmethod
-	def write():
+	def write(self):
 		pass
+
+class VersionTranslatorRpmSpec(VersionReader):
+	def read(self):
+		return VersionIdentifier()
 
 class VersionTranslatorPlainFile(VersionReader, VersionWriter):
-	def __init__(self, config = None):
-		pass
-#		print config
-
 	def read(self):
-		version = zeroVersion()
+		version = VersionIdentifier()
 	
 		try:
 			versionFile = open('VERSION', 'r')
@@ -83,9 +124,9 @@ class VersionTranslatorPlainFile(VersionReader, VersionWriter):
 
 		return version
 
-	def write():
+	def write(self, version):
 		f = open("VERSION", "w")
-		f.write(getVersionFormattedGnu(version))
+		f.write(version.getFormattedGnu())
 		f.close()
 
 	def isReadable(self):
@@ -96,7 +137,7 @@ class VersionTranslatorPomFile(VersionReader):
 		return os.path.exists("pom.xml")
 
 	def read(self):
-		version = zeroVersion()
+		version = VersionIdentifier()
 
 		try:
 			version = reallyCheekyXpath("pom.xml", "//project/version/text()")[0]
@@ -107,27 +148,19 @@ class VersionTranslatorPomFile(VersionReader):
 		return version
 
 def parseVersion(versionString):
-	version = zeroVersion()
+	version = VersionIdentifier()
 
 	m = re.search("(\d+)\.(\d+)\.(\d+)[\.-]*(\d*)", versionString)
 
 	if m != None:
-		version['major'] = int(m.group(1))
-		version['minor'] = int(m.group(2))
-		version['revision'] = int(m.group(3))
-		version['release'] = m.group(4)
+		version.major = int(m.group(1))
+		version.minor = int(m.group(2))
+		version.revision = int(m.group(3))
+		version.release = m.group(4)
 	elif args.debug:
 		print("VERSION file did not match regex.")
 
 	return version
-
-def zeroVersion():
-	return {
-		"major": 0,
-		"minor": 0,
-		"revision": 0,
-		"release": ''
-	}
 
 def reallyCheekyXpath(filename, xpath):
 	f = open(filename, "r")
@@ -151,11 +184,18 @@ def printWarn(message):
 def printInfo(message):
 	printPrefix("INFO", message, 4)
 
+def printDebug(message):
+	printPrefix("DEBG", message, 1)
+
 def printPrefix(prefix, message, color = None):
 	startColor = ""
 	endColor = ""
 
 	if hasColors():
+		if color == 1:
+			startColor = Style.BRIGHT + Fore.RED
+			endColor = Style.RESET_ALL
+
 		if color == 3:
 			startColor = Style.BRIGHT + Fore.MAGENTA
 			endColor = Style.RESET_ALL
@@ -164,7 +204,7 @@ def printPrefix(prefix, message, color = None):
 			startColor = Style.BRIGHT + Fore.BLUE
 			endColor = Style.RESET_ALL
 
-	print("[" + startColor + prefix + endColor + "] " + message);
+	print("[" + startColor + prefix + endColor + "] " + str(message));
 
 def hasColors():
 	hasColors = True 
@@ -237,13 +277,30 @@ fileHandlers = {
 }
 
 def getVersionFromReaders():
+	versions = []
+
 	for reader in versionReaders:
 		if reader.isReadable():
 			versionFromReader = reader.read()
 
-			printInfo("Reading version using: " + reader.name() + " = " + getVersionFormattedGnu(versionFromReader))
+			versions.append(versionFromReader)
 
-			return versionFromReader # first one only at the mo
+			printInfo("Reading version using: " + reader.name() + " = " + versionFromReader.getFormattedGnu() )
+	
+	tmp = None
+	for version in versions:
+		if tmp == None:
+			tmp = version
+			continue
+
+		if tmp != version:
+			printWarn("All version readers are not consistant! Using the first: " + versions[0].getFormattedGnu());
+			printWarn("Or re-run buildid with -u to update version sources")
+
+			break
+
+	return versions[0] # first one only at the mo
+
 
 def runCommand(cmd):
 	process = subprocess.Popen(cmd, shell = True, stdout=subprocess.PIPE)
@@ -288,33 +345,11 @@ def isEmpty(value):
 
 	return False
 
-def getVersionFormattedShort(version):
-	return str(version['major']) + "." + str(version["minor"]) + "." + str(version['revision'])
-
-def getVersionFormattedGnu(version):
-	if isEmpty(version['release']):
-		rel = ''
-	else:
-		rel = '-' + str(version['release'])
-
-	return str(version['major']) + "." + str(version["minor"]) + "." + str(version['revision']) + rel
-
-def getVersionFormattedWin(version):
-	if isEmpty(version['release']):
-		rel = '.0';
-	else:
-		rel = '.' + str(version['release'])
-
-	return str(version['major']) + "." + str(version["minor"]) + "." + str(version['revision']) + rel
-
 def getPlatform():
 	if args.platform != None:
 		return args.platform
 	else:
 		return "linux"
-
-def getVersionFormattedPlatform():
-	return getVersionFormattedGnu(version)
 
 def getCommitTag():
 	if isGit():
@@ -332,14 +367,14 @@ def getSourceTag():
 		return properties['timestamp']
 
 def getPackageTag():
-	return getVersionFormattedPlatform() + "-" + getSourceTag()
+	return version.getFormattedPlatform() + "-" + getSourceTag()
 
 def isEverythingCommited():
 	return False
 
 def saveVersion():
 	for writer in versionWriters:
-		writer.write(getVersionFormattedGnu(version))
+		writer.write(version)
 
 def buildProperties():
 	properties["timestamp"] = str(int(time.time()))
@@ -348,9 +383,9 @@ def buildProperties():
 	properties["version.minor"] = version['minor']
 	properties["version.release"] = version['release']
 	properties["version.revision"] = version['revision']
-	properties["version.formatted.gnu"] = getVersionFormattedGnu(version)
-	properties["version.formatted.short"] = getVersionFormattedShort(version)
-	properties["version.formatted.win"] = getVersionFormattedWin(version)
+	properties["version.formatted.gnu"] = version.getFormattedGnu()
+	properties["version.formatted.short"] = version.getFormattedShort()
+	properties["version.formatted.win"] = version.getFormattedWin()
 	properties["tag"] = getPackageTag()
 	properties["buildhost.platform"] = platform.platform()
 	properties["buildhost.system"] = platform.system()
@@ -369,61 +404,4 @@ def buildProperties():
 
 ################################################################################
 
-for section in cfgparser.sections():
-	if cfgparser.has_option(section, "type"):
-		typeOfThing = cfgparser.get(section, "type")
 
-		translatorConfig = dict()
-		
-		for cfg in cfgparser.items(section):
-			translatorConfig[cfg[0]] = cfg[1]
-
-		inst = parseVersionTranslator(translatorConfig)
-
-		if inst is VersionReader:
-			versionReaders.append(reader)
-
-		if inst is VersionWriter:
-			versionWriters.append(writer)
-
-if args.incrementMajor:
-	version['major'] = version['major'] + 1
-	saveVersion()
-
-if args.incrementMinor:
-	version['minor'] = version['minor'] + 1
-	saveVersion()
-
-properties = dict()
-handler = fileHandlers[args.format]
-
-if args.newBuild:
-	version = getVersionFromReaders()
-
-	handler.write(buildProperties());
-
-	printInfo("Wrote file: " + handler.getFilename() + ". View the file or jst run `buildid` again to see all the properties.");
-
-else:
-	if not handler.fileExists():
-		printInfo("There is no buildid file. Use -n to create a new build.")
-	else:
-		properties = handler.read()
-
-		if args.key:
-			if args.key in properties:
-				print(properties[args.key])
-			else: 
-				print(args.key + " was not found.");
-		elif args.keySearch:
-			for key in properties:
-				if args.keySearch in key:
-					print(handler.toStringSingle(key))
-		else:
-			if not args.quiet:
-				printInfo("Printing buildid from file: " + handler.getFilename())
-				printInfo("You can output a single property with -k <property-name>")
-				printInfo("or see all these properties again without this message with -q");
-				print("")
-
-			print(handler.toString())

@@ -1,0 +1,69 @@
+#!/usr/bin/python
+
+print "foo"
+
+for section in cfgparser.sections():
+	if cfgparser.has_option(section, "type") and cfgparser.has_option(section, "translator"):
+		typeOfThing = cfgparser.get(section, "type")
+
+		translatorConfig = dict()
+		
+		for cfg in cfgparser.items(section):
+			translatorConfig[cfg[0]] = cfg[1]
+
+		inst = parseVersionTranslator(translatorConfig)
+
+		if isinstance(inst, VersionReader):
+			versionReaders.append(inst)
+
+		if isinstance(inst, VersionWriter):
+			versionWriters.append(inst)
+
+
+if args.debug:
+	printDebug("Readers:" + str(versionReaders))
+	printDebug("Writers:" + str(versionWriters))	
+
+if args.incrementMajor:
+	version['major'] = version['major'] + 1
+	saveVersion()
+
+if args.incrementMinor:
+	version['minor'] = version['minor'] + 1
+	saveVersion()
+
+properties = dict()
+handler = fileHandlers[args.format]
+
+if args.newBuild:
+	version = getVersionFromReaders()
+
+	saveVersion()
+
+	handler.write(buildProperties());
+
+	printInfo("Wrote file: " + handler.getFilename() + ". View the file or jst run `buildid` again to see all the properties.");
+
+else:
+	if not handler.fileExists():
+		printInfo("There is no buildid file. Use -n to create a new build.")
+	else:
+		properties = handler.read()
+
+		if args.key:
+			if args.key in properties:
+				print(properties[args.key])
+			else: 
+				print(args.key + " was not found.");
+		elif args.keySearch:
+			for key in properties:
+				if args.keySearch in key:
+					print(handler.toStringSingle(key))
+		else:
+			if not args.quiet:
+				printInfo("Printing buildid from file: " + handler.getFilename())
+				printInfo("You can output a single property with -k <property-name>")
+				printInfo("or see all these properties again without this message with -q");
+				print("")
+
+			print(handler.toString())

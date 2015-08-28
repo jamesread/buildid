@@ -1,6 +1,6 @@
 VERSION:=$(shell ./buildid -k version.formatted.short)
 
-default: clean
+default: clean tests
 	rm -rf dist/buildid-$(VERSION)/
 	mkdir -p dist/buildid-$(VERSION)/
 
@@ -15,6 +15,9 @@ default: clean
 
 	cp buildid dist/buildid-$(VERSION)/
 	cd dist && zip -r buildid.zip buildid-$(VERSION)
+
+tests:
+	python 
 
 rpm:
 	rpmbuild -ba var/buildid.spec
