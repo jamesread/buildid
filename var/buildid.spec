@@ -19,8 +19,8 @@ buildid
 %setup -q
 
 %build
-mkdir -p "%{buildroot}/usr/sbin/"
-cp buildid "%{buildroot}/usr/sbin/"
+mkdir -p "%{buildroot}/usr/lib/buildid"
+cp app/* "%{buildroot}/usr/lib/buildid"
 
 mkdir -p "%{buildroot}/usr/share/doc/buildid/"
 cp README.md "%{buildroot}/usr/share/doc/buildid/"
