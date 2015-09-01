@@ -17,9 +17,8 @@ default: clean tests
 	cp buildid/*.py dist/buildid-$(VERSION)/app/
 	cd dist && zip -r buildid.zip buildid-$(VERSION)
 
-test:tests
 tests:
-	python tests
+	pytest
 
 rpm:
 	rpmbuild -ba var/buildid.spec
@@ -27,4 +26,4 @@ rpm:
 clean:
 	rm -rf dist
 
-.PHONY: clean default
+.PHONY: clean default tests

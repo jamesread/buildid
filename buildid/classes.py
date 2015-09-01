@@ -27,6 +27,12 @@ class VersionIdentifier:
 	revision = 0
 	release = ""
 
+	def __init__(self, major, minor, revision, release = ""):
+		self.major = major
+		self.minor = minor
+		self.revision = revision
+		self.release = release
+
 	def getFormattedShort(self):
 		return str(self.major) + "." + str(self.minor) + "." + str(self.revision)
 

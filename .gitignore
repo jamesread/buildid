@@ -1,5 +1,5 @@
 dist
 .buildid.ini
 .buildid
-buildid/*.pyc
+**/*.pyc
 **/*.swp
