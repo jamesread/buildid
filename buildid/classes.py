@@ -1,15 +1,18 @@
 #!/usr/bin/python
 
-import argparse
 import time
 import re
 import platform
 from socket import gethostname
 import os
 import subprocess
-import ConfigParser as configparser
 import abc
 from lxml import etree
+
+import app
+
+args = app.args
+properties = dict()
 
 try:
 	from colorama import init as coloramainit, Fore, Style
@@ -25,7 +28,7 @@ class VersionIdentifier:
 	release = ""
 
 	def getFormattedShort(self):
-		return str(self.major) + "." + str(version.minor) + "." + str(version.revision)
+		return str(self.major) + "." + str(self.minor) + "." + str(self.revision)
 
 	def getFormattedGnu(self):
 		if isEmpty(self.release):
@@ -39,35 +42,21 @@ class VersionIdentifier:
 		if isEmpty(self.release):
 			rel = '.0';
 		else:
-			rel = '.' + str(version['release'])
+			rel = '.' + str(self.release)
 
 		return str(self.major) + "." + str(self.minor) + "." + str(self.revision) + rel
 
 	def getFormattedPlatform(self):
 		return self.getFormattedGnu()
 
-argparser = argparse.ArgumentParser();
-argparser.add_argument("-n", "--newBuild", action = 'store_true');
-argparser.add_argument("--format", "-f", default = "ini", choices = ["ini"]);
-argparser.add_argument("--platform", default = None)
-argparser.add_argument("--incrementMajor", action = 'store_true')
-argparser.add_argument("--incrementMinor", action = 'store_true')
-argparser.add_argument("-d", "--debug", action = 'store_true')
-argparser.add_argument("-k", "--key", help = "print the value of just one key")
-argparser.add_argument("-K", "--keySearch", help = "print the values where the key matches this search term")
-argparser.add_argument("-w", "--filename", default = ".buildid")
-argparser.add_argument("-q", "--quiet", action = 'store_true')
-argparser.add_argument("-p", "--plain", action = "store_true")
-argparser.add_argument("-u", "--update", action = "store_true")
-args = argparser.parse_args()
+	def __cmp__(self, othr):
+		if not isinstance(othr, VersionIdentifier):
+			return False 
 
-configDefaults = {
-	"title": "Untitled Project"
-}
-
-cfgparser = configparser.ConfigParser(defaults = configDefaults)
-cfgparser.add_section("project")
-cfgparser.read("buildid.cfg");
+		return cmp(
+			(self.major, self.minor, self.revision),
+			(othr.major, othr.minor, othr.revision)
+		)
 
 def parseVersionTranslator(config):
 	translator = config["translator"].lower()
@@ -250,6 +239,8 @@ class BuildIdFileHandlerIni(BuildIdFileHandler):
 		return ".buildid"
 
 	def toString(self):
+		global properties 
+
 		buf = ""
 		for key in sorted(properties):
 			buf += self.toStringSingle(key) + "\n"
@@ -257,10 +248,13 @@ class BuildIdFileHandlerIni(BuildIdFileHandler):
 		return buf.strip()
 
 	def toStringSingle(self, key):
+		global properties 
+
 		return (key + "=" + str(properties[key]))
 
 
 	def read(self):
+		global properties
 		properties = dict()
 
 		content = open(self.getFilename(), 'r').readlines()
@@ -272,9 +266,6 @@ class BuildIdFileHandlerIni(BuildIdFileHandler):
 
 		return properties
 
-fileHandlers = {
-	"ini": BuildIdFileHandlerIni(),
-}
 
 def getVersionFromReaders():
 	versions = []
@@ -345,12 +336,6 @@ def isEmpty(value):
 
 	return False
 
-def getPlatform():
-	if args.platform != None:
-		return args.platform
-	else:
-		return "linux"
-
 def getCommitTag():
 	if isGit():
 		return getGitRevision()
@@ -361,32 +346,36 @@ def isReleaseBuild():
 	return False
 
 def getSourceTag():
+	global properties 
+
 	if isReleaseBuild() and isEverythingCommited():
 		return getCommitTag()
 	else:
 		return properties['timestamp']
 
-def getPackageTag():
+def getPackageTag(version):
 	return version.getFormattedPlatform() + "-" + getSourceTag()
 
 def isEverythingCommited():
 	return False
 
-def saveVersion():
+def saveVersion(version):
 	for writer in versionWriters:
 		writer.write(version)
 
-def buildProperties():
+def buildProperties(version):
+	global properties
+
 	properties["timestamp"] = str(int(time.time()))
 
-	properties["version.major"] = version['major']
-	properties["version.minor"] = version['minor']
-	properties["version.release"] = version['release']
-	properties["version.revision"] = version['revision']
+	properties["version.major"] = version.major
+	properties["version.minor"] = version.minor
+	properties["version.release"] = version.release
+	properties["version.revision"] = version.revision
 	properties["version.formatted.gnu"] = version.getFormattedGnu()
 	properties["version.formatted.short"] = version.getFormattedShort()
 	properties["version.formatted.win"] = version.getFormattedWin()
-	properties["tag"] = getPackageTag()
+	properties["tag"] = getPackageTag(version)
 	properties["buildhost.platform"] = platform.platform()
 	properties["buildhost.system"] = platform.system()
 	properties["buildhost.release"] = platform.release()
@@ -398,10 +387,11 @@ def buildProperties():
 		properties["git.revision"] = getGitRevision();
 		properties["git.revision.short"] = getGitRevision()[0:7];
 
-	properties["project.title"] = cfgparser.get("project", "title")
 
 	return properties
 
-################################################################################
-
+def getFileHandlers():
+	return {
+		"ini": BuildIdFileHandlerIni(),
+	}
 

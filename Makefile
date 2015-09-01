@@ -1,4 +1,4 @@
-VERSION:=$(shell ./buildid -k version.formatted.short)
+VERSION:=$(shell ./buildid/app.py -k version.formatted.short)
 
 default: clean tests
 	rm -rf dist/buildid-$(VERSION)/
@@ -16,8 +16,9 @@ default: clean tests
 	cp buildid dist/buildid-$(VERSION)/
 	cd dist && zip -r buildid.zip buildid-$(VERSION)
 
+test:tests
 tests:
-	python 
+	python tests
 
 rpm:
 	rpmbuild -ba var/buildid.spec
