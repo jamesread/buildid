@@ -27,7 +27,7 @@ class VersionIdentifier:
 	revision = 0
 	release = ""
 
-	def __init__(self, major, minor, revision, release = ""):
+	def __init__(self, major = 0, minor = 0, revision = 0, release = ""):
 		self.major = major
 		self.minor = minor
 		self.revision = revision
