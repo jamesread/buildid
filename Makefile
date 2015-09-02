@@ -18,7 +18,7 @@ default: clean tests
 	cd dist && zip -r buildid.zip buildid-$(VERSION)
 
 tests:
-	pytest
+	py.test
 
 rpm:
 	rpmbuild -ba var/buildid.spec
