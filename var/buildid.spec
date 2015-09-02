@@ -18,9 +18,15 @@ buildid
 %prep
 %setup -q
 
+%post
+ln -sf /usr/lib/buildid/app.py /usr/sbin/buildid
+
+%postun
+rm -f /usr/sbin/buildid
+
 %build
-mkdir -p "%{buildroot}/usr/lib/buildid"
-cp app/* "%{buildroot}/usr/lib/buildid"
+mkdir -p "%{buildroot}/usr/lib/buildid/"
+cp app/* "%{buildroot}/usr/lib/buildid/"
 
 mkdir -p "%{buildroot}/usr/share/doc/buildid/"
 cp README.md "%{buildroot}/usr/share/doc/buildid/"
@@ -29,7 +35,7 @@ mkdir -p "%{buildroot}/usr/share/man/man1/"
 cp doc/buildid.1.gz "%{buildroot}/usr/share/man/man1/"
 
 %files
-/usr/sbin/buildid
+/usr/lib/buildid/
 %doc /usr/share/doc/buildid/README.md
 %doc /usr/share/man/man1/buildid.1.gz
 
