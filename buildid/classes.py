@@ -9,9 +9,8 @@ import subprocess
 import abc
 from lxml import etree
 
-import app
+import settings
 
-args = app.args
 properties = dict()
 
 try:
@@ -55,14 +54,26 @@ class VersionIdentifier:
 	def getFormattedPlatform(self):
 		return self.getFormattedGnu()
 
-	def __cmp__(self, othr):
-		if not isinstance(othr, VersionIdentifier):
-			return False 
+	def __eq__(self, othr):
+		if isinstance(othr, VersionIdentifier):
+			return (self.major, self.minor, self.release) == (othr.major, othr.minor, othr.release)
 
-		return cmp(
-			(self.major, self.minor, self.revision),
-			(othr.major, othr.minor, othr.revision)
-		)
+		return False
+
+	def __cmp__(self, othr):
+		if isinstance(othr, VersionIdentifier):
+			return cmp(
+				(self.major, self.minor, self.release),
+				(othr.major, othr.minor, othr.release)
+			)
+
+		return 0
+
+	def __str__(self):
+		return self.getFormattedGnu()
+	
+	def __repr__(self):
+		return self.__str__()
 
 def parseVersionTranslator(config):
 	translator = config["translator"].lower()
@@ -80,7 +91,7 @@ class VersionTranslator:
 		self.config = config
 
 	def name(self):
-		return self.__class__.__name__
+		return self.__class__.__name__.replace("VersionTranslator", "")
 
 	def __str__(self):
 		return self.name()
@@ -93,16 +104,29 @@ class VersionReader(VersionTranslator):
 	def read(self):
 		pass
 
+	@abc.abstractmethod
+	def getSource(self):
+		return "???"
+
 class VersionWriter(VersionTranslator):
 	@abc.abstractmethod
 	def write(self):
 		pass
 
 class VersionTranslatorRpmSpec(VersionReader):
+	def getSource(self):
+		return self.config['filename']
+
 	def read(self):
-		return VersionIdentifier()
+		version = reallyCheekyRegex(self.config["filename"], "Version\:[ \t]+([\d\.\-]+)")
+		version = parseVersion(version)
+
+		return version
 
 class VersionTranslatorPlainFile(VersionReader, VersionWriter):
+	def getSource(self):
+		return 'VERSION'
+
 	def read(self):
 		version = VersionIdentifier()
 	
@@ -128,8 +152,11 @@ class VersionTranslatorPlainFile(VersionReader, VersionWriter):
 		return os.path.exists("VERSION")
 
 class VersionTranslatorPomFile(VersionReader):
-	def isReadble(self):
+	def isReadable(self):
 		return os.path.exists("pom.xml")
+
+	def getSource(self):
+		return 'pom.xml'
 
 	def read(self):
 		version = VersionIdentifier()
@@ -145,17 +172,30 @@ class VersionTranslatorPomFile(VersionReader):
 def parseVersion(versionString):
 	version = VersionIdentifier()
 
-	m = re.search("(\d+)\.(\d+)\.(\d+)[\.-]*(\d*)", versionString)
+	versionRegex = "(\d+)\.(\d+)\.(\d+)[\.-]*(\d*)"
+	m = re.search(versionRegex, versionString)
 
 	if m != None:
 		version.major = int(m.group(1))
 		version.minor = int(m.group(2))
 		version.revision = int(m.group(3))
 		version.release = m.group(4)
-	elif args.debug:
+	elif settings.debug:
 		print("VERSION file did not match regex.")
 
 	return version
+
+def reallyCheekyRegex(filename, regex):
+	f = open(filename, "r")
+	content = f.read()
+	f.close()
+
+	m = re.findall(regex, content, re.MULTILINE)
+
+	if m != None and len(m) > 0:
+		return m[0]
+
+	return ""
 
 def reallyCheekyXpath(filename, xpath):
 	f = open(filename, "r")
@@ -169,9 +209,6 @@ def reallyCheekyXpath(filename, xpath):
 	res = pomTree.xpath(xpath)
 
 	return res
-
-versionReaders = [ VersionTranslatorPlainFile(), VersionTranslatorPomFile() ]
-versionWriters = [ VersionTranslatorPlainFile() ]
 
 def printWarn(message):
 	printPrefix("WARN", message, 3)
@@ -210,20 +247,20 @@ def hasColors():
 	except:
 		hasColors = False
 
-	if args.plain:
+	if settings.plain:
 		hasColors = False
 
 	return hasColors
 
 class BuildIdFileHandler:
 	def getFilename(self):
-		if args.filename == ".buildid":
+		if settings.filename == ".buildid":
 			return self.getDefaultFilename()
 		else:
-			return args.filename
+			return settings.filename
 
 	def getDefaultFilename(self):
-		return args.filename
+		return settings.filename
 	
 	def fileExists(self):
 		return os.path.exists(self.getFilename())
@@ -272,8 +309,32 @@ class BuildIdFileHandlerIni(BuildIdFileHandler):
 
 		return properties
 
+def parseVersionTranslatorsFromConfig(cfgparser):
+	global versionReaders, versionWriters 
+
+	for section in cfgparser.sections():
+		if cfgparser.has_option(section, "type") and cfgparser.has_option(section, "translator"):
+			typeOfThing = cfgparser.get(section, "type")
+
+			translatorConfig = dict()
+			
+			for cfg in cfgparser.items(section):
+				translatorConfig[cfg[0]] = cfg[1]
+
+			inst = parseVersionTranslator(translatorConfig)
+
+			if isinstance(inst, VersionReader):
+				versionReaders.append(inst)
+
+			if isinstance(inst, VersionWriter):
+				versionWriters.append(inst)
+
+versionReaders = [ VersionTranslatorPlainFile(), VersionTranslatorPomFile() ]
+versionWriters = [ VersionTranslatorPlainFile() ]
 
 def getVersionFromReaders():
+	global versionReaders
+
 	versions = []
 
 	for reader in versionReaders:
@@ -282,7 +343,7 @@ def getVersionFromReaders():
 
 			versions.append(versionFromReader)
 
-			printInfo("Reading version using: " + reader.name() + " = " + versionFromReader.getFormattedGnu() )
+			printInfo("Reading version using: " + reader.name() + " (" + reader.getSource() + ") = " + versionFromReader.getFormattedGnu() )
 	
 	tmp = None
 	for version in versions:

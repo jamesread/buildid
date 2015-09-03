@@ -18,7 +18,8 @@ default: clean tests
 	cd dist && zip -r buildid.zip buildid-$(VERSION)
 
 tests:
-	py.test
+	py.test tests
+test:tests
 
 rpm:
 	rpmbuild -ba var/buildid.spec
@@ -26,4 +27,4 @@ rpm:
 clean:
 	rm -rf dist
 
-.PHONY: clean default tests
+.PHONY: clean default tests test
