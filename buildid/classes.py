@@ -385,6 +385,9 @@ def isGit():
 		
 	return os.path.exists(".git")
 
+def isInJenkins():
+	return "JENKINS_URL" in os.environ
+
 def getGitRevision():
 	return runCommand("git rev-parse HEAD")
 
@@ -448,6 +451,14 @@ def buildProperties(version):
 	properties["buildhost.release"] = platform.release()
 	properties["buildhost.version"] = platform.version()
 	properties["buildhost.hostname"] = gethostname()
+
+	if isInJenkins():
+		properties['jenkins.url'] = os.environ['JENKINS_URL']
+		properties['jenkins.buildid'] = os.environ['BUILD_ID']
+		properties['jenkins.buildnumber'] = os.environ['BUILD_NUMBER']
+		properties['jenkins.buildurl'] = os.environ['BUILD_URL']
+		properties['jenkins.job_name'] = os.environ['JOB_NAME']
+		properties['jenkins.node'] = os.environ['NODE_NAME']
 
 	if isGit():
 		properties["git.branch"] = getGitBranch()
