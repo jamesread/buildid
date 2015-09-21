@@ -1,3 +1,3 @@
 debug = False
 plain = False
-filename = ".buildid"
+filename = None

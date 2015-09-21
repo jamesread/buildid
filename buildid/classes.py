@@ -253,14 +253,22 @@ def hasColors():
 	return hasColors
 
 class BuildIdFileHandler:
-	def getFilename(self):
-		if settings.filename == ".buildid":
-			return self.getDefaultFilename()
-		else:
+	def getFilename(self):	
+		if settings.filename is not None:
 			return settings.filename
+		else:
+			alts = list();
+			alts.append("SPECS/.buildid")
+			alts.append("SPECS/buildid")
+
+			for filename in alts:
+				if os.path.exists(filename):
+					return filename
+
+		return self.getDefaultFilename()
 
 	def getDefaultFilename(self):
-		return settings.filename
+		return ".buildid"
 	
 	def fileExists(self):
 		return os.path.exists(self.getFilename())
