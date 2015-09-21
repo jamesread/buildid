@@ -365,7 +365,10 @@ def getVersionFromReaders():
 
 			break
 
-	return versions[0] # first one only at the mo
+	if len(versions) == 0:
+		return VersionIdentifier()
+	else:
+		return versions[0] # first one only at the mo
 
 
 def runCommand(cmd):
