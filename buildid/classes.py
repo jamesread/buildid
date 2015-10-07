@@ -317,6 +317,17 @@ class BuildIdFileHandlerIni(BuildIdFileHandler):
 
 		return properties
 
+class BuildIdFileHandlerRpmMacros(BuildIdFileHandler):
+	def toString(self):
+		global properties
+
+		buf = ""
+
+		for key in sorted(properties):
+			buf += "%" + key + " " + properties[key] + "\n"
+
+		return buf.strip();
+
 def parseVersionTranslatorsFromConfig(cfgparser):
 	global versionReaders, versionWriters 
 
