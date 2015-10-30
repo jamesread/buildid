@@ -55,7 +55,8 @@ if __name__ == "__main__":
 
 		handler.write(buildProperties(version));
 
-		printInfo("Wrote file: " + handler.getFilename() + ". View the file or just run `buildid` again to see all the properties.");
+		import os
+		printInfo("Wrote file: " + os.getcwd() + "/" + handler.getFilename() + ". View the file or just run `buildid` again to see all the properties.");
 
 	else:
 		if not handler.fileExists():

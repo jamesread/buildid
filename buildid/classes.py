@@ -239,7 +239,12 @@ def printPrefix(prefix, message, color = None):
 	print("[" + startColor + prefix + endColor + "] " + str(message));
 
 def hasColors():
-	hasColors = True 
+	hasColors = True
+	
+	from os import environ
+	
+	if "xterm" not in environ['TERM']:
+		return False 
 
 	try: 
 		if Fore.BLACK:
