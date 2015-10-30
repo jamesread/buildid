@@ -258,14 +258,22 @@ def hasColors():
 	return hasColors
 
 class BuildIdFileHandler:
-	def getFilename(self):
-		if settings.filename == ".buildid":
-			return self.getDefaultFilename()
-		else:
+	def getFilename(self):	
+		if settings.filename is not None:
 			return settings.filename
+		else:
+			alts = list();
+			alts.append("SPECS/.buildid")
+			alts.append("SPECS/buildid")
+
+			for filename in alts:
+				if os.path.exists(filename):
+					return filename
+
+		return self.getDefaultFilename()
 
 	def getDefaultFilename(self):
-		return settings.filename
+		return ".buildid"
 	
 	def fileExists(self):
 		return os.path.exists(self.getFilename())
@@ -313,6 +321,17 @@ class BuildIdFileHandlerIni(BuildIdFileHandler):
 			properties[key] = value
 
 		return properties
+
+class BuildIdFileHandlerRpmMacros(BuildIdFileHandler):
+	def toString(self):
+		global properties
+
+		buf = ""
+
+		for key in sorted(properties):
+			buf += "%" + key + " " + properties[key] + "\n"
+
+		return buf.strip();
 
 def parseVersionTranslatorsFromConfig(cfgparser):
 	global versionReaders, versionWriters 
@@ -362,7 +381,10 @@ def getVersionFromReaders():
 
 			break
 
-	return versions[0] # first one only at the mo
+	if len(versions) == 0:
+		return VersionIdentifier()
+	else:
+		return versions[0] # first one only at the mo
 
 
 def runCommand(cmd):
@@ -389,6 +411,9 @@ def isGit():
 	checkGitIgnore();
 		
 	return os.path.exists(".git")
+
+def isInJenkins():
+	return "JENKINS_URL" in os.environ
 
 def getGitRevision():
 	return runCommand("git rev-parse HEAD")
@@ -453,6 +478,14 @@ def buildProperties(version):
 	properties["buildhost.release"] = platform.release()
 	properties["buildhost.version"] = platform.version()
 	properties["buildhost.hostname"] = gethostname()
+
+	if isInJenkins():
+		properties['jenkins.url'] = os.environ['JENKINS_URL']
+		properties['jenkins.buildid'] = os.environ['BUILD_ID']
+		properties['jenkins.buildnumber'] = os.environ['BUILD_NUMBER']
+		properties['jenkins.buildurl'] = os.environ['BUILD_URL']
+		properties['jenkins.job_name'] = os.environ['JOB_NAME']
+		properties['jenkins.node'] = os.environ['NODE_NAME']
 
 	if isGit():
 		properties["git.branch"] = getGitBranch()
