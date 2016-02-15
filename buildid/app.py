@@ -61,7 +61,7 @@ if __name__ == "__main__":
 		outputHandler.write(buildProperties(version));
 
 		import os
-		printInfo("Wrote file: " + os.getcwd() + "/" + handler.getFilename() + ". View the file or just run `buildid` again to see all the properties.");
+		printInfo("Wrote file: " + os.getcwd() + "/" + outputHandler.getFilename() + ". View the file or just run `buildid` again to see all the properties.");
 
 		if settings.info:
 			print outputHandler.toString() + "\n"
