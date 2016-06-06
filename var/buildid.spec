@@ -10,7 +10,7 @@ URL:		http://github.com/jamesread/buildid
 Source0:	buildid.zip
 
 BuildRequires:	zip
-Requires:	python
+Requires:	python python-lxml
 
 %description
 buildid

@@ -243,8 +243,9 @@ def hasColors():
 	
 	from os import environ
 	
-	if "xterm" not in environ['TERM']:
-		return False 
+	if "TERM" in environ:
+		if "xterm" not in environ['TERM']:
+			return False 
 
 	try: 
 		if Fore.BLACK:
@@ -329,7 +330,7 @@ class BuildIdFileHandlerRpmMacros(BuildIdFileHandler):
 		buf = ""
 
 		for key in sorted(properties):
-			buf += "%" + key + " " + properties[key] + "\n"
+			buf += "%" + key + " " + str(properties[key]) + "\n"
 
 		return buf.strip();
 

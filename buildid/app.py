@@ -10,6 +10,7 @@ if __name__ == "__main__":
 	argparser.add_argument("-F", "--inputFormat", default = "ini", choices = ["ini", "rpmmacro"]);
 	argparser.add_argument("--platform", default = None)
 	argparser.add_argument("-d", "--debug", action = 'store_true')
+	argparser.add_argument("-i", "--info", action = 'store_true' )
 	argparser.add_argument("-k", "--key", help = "print the value of just one key")
 	argparser.add_argument("-K", "--keySearch", help = "print the values where the key matches this search term")
 	argparser.add_argument("-w", "--filename", default = None)
@@ -23,6 +24,7 @@ if __name__ == "__main__":
 	settings.plain = args.plain
 	settings.filename = args.filename
 	settings.debug = args.debug
+	settings.info = args.info
 
 	from classes import BuildIdFileHandlerIni, BuildIdFileHandlerRpmMacros, printInfo, getVersionFromReaders, saveVersion, buildProperties, parseVersionTranslatorsFromConfig
 
@@ -60,6 +62,9 @@ if __name__ == "__main__":
 
 		import os
 		printInfo("Wrote file: " + os.getcwd() + "/" + outputHandler.getFilename() + ". View the file or just run `buildid` again to see all the properties.");
+
+		if settings.info:
+			print outputHandler.toString() + "\n"
 
 	else:
 		if not inputHandler.fileExists():
