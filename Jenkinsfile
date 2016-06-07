@@ -11,7 +11,7 @@ node {
 
 stage "Depoy"
 
-paralell rpmFedora: {
+parallel rpmFedora: {
 	node {
 		writeFile file: 'README.txt', text: "Fedora"
 		sleep 10
