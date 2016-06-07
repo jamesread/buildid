@@ -330,7 +330,7 @@ class BuildIdFileHandlerRpmMacros(BuildIdFileHandler):
 		buf = ""
 
 		for key in sorted(properties):
-			buf += "%" + key + " " + str(properties[key]) + "\n"
+			buf += "%define " + key.replace(".", "_") + " " + str(properties[key]) + "\n"
 
 		return buf.strip();
 
