@@ -9,7 +9,7 @@ node {
 	echo "Test"
 }
 
-stage "Depoy"i
+stage "Depoy"
 
 paralell rpmFedora: {
 	node {
