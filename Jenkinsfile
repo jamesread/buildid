@@ -1,5 +1,5 @@
 node {
 	stage "Package"
-	scm.checkout
+	checkout scm
 	sh "make"
 }
