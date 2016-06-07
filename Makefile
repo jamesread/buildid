@@ -1,4 +1,5 @@
 VERSION:=$(shell ./buildid/app.py -k version.formatted.short)
+$(buildid -qf rpmmacro > .buildid.rpmmacro)
 
 default: clean tests
 	rm -rf dist/buildid-$(VERSION)/
