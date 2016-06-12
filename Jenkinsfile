@@ -24,7 +24,7 @@ parallel (
 		unstash "binzip"
 
 		sh 'mv dist SOURCES'
-		sh 'mkdir SPECS'
+		sh 'mkdir -p SPECS'
 		sh 'unzip -jo SOURCES/buildid.zip "buildid-*/var/buildid.spec" "buildid-*/.buildid" -d SPECS/'
 		sh 'buildid -f rpmmacro > SPECS/buildid.rpmmacro'
 		sh 'rpmbuild -ba SPECS/buildid.spec'
