@@ -19,23 +19,29 @@ node {
 stage "Depoy"
 
 parallel (
-	rpmfedora: { node { ws "rpmFedora" {
+	branch("rpmFedora") {
 		writeFile file: 'README.txt', text: "Fedora"
 		unstash "binzip"
 		sleep 10
-	}}}, 
+	}, 
 
-	rpmel6: { node { ws "rpmEl6" {
+	branch("rpmEl6") {
 		writeFile file: 'README.txt', text: "EL6"
 		unstash "binzip"
 		sleep 10
-	}}}, 
+	}, 
 	
-	rpmel7: { node { ws "rpmEl7" {
+	branch("rpmEl7") {
 			writeFile file: 'README.txt', text: "EL7"
 			unstash "binzip"
 			sleep 10
-	}}},
+	},
 
 	failFast: true
 )
+
+branch(String label, Closure body) {
+	label: { node(label) { ws(label) {
+		body.call()
+	}}}
+}
