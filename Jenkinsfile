@@ -40,7 +40,7 @@ parallel (
 	failFast: true
 )
 
-branch(String label, Closure body) {
+def branch(String label, Closure body) {
 	label: { node(label) { ws(label) {
 		body.call()
 	}}}
