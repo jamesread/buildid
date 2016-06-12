@@ -23,11 +23,11 @@ parallel (
 		writeFile file: 'README.txt', text: "Fedora"
 		unstash "binzip"
 
-		mv dist SOURCES
-		mkdir SPECS
-		unzip -jo SOURCES/buildid.zip "buildid/var/buildid.spec" "buildid/.buildid" -d SPECS/
-		buildid -f rpmmacro > SPECS/buildid.rpmmacro
-		rpmbuild -ba SPECS/buildid.spec 
+		sh 'mv dist SOURCES'
+		sh 'mkdir SPECS'
+		sh 'unzip -jo SOURCES/buildid.zip "buildid/var/buildid.spec" "buildid/.buildid" -d SPECS/'
+		sh 'buildid -f rpmmacro > SPECS/buildid.rpmmacro'
+		sh 'rpmbuild -ba SPECS/buildid.spec'
 	}}}, 
 
 	rpmEl6: { node { ws {
