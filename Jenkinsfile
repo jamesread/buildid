@@ -1,3 +1,11 @@
+properties(
+	[
+		[
+			$class: 'jenkins.model.BuildDiscarderProperty', strategy: [$class: 'LogRotator', numToKeepStr: '10', artifactNumToKeepStr: '10']
+		]
+	]
+)
+
 stage "Package"
 
 node {
@@ -5,8 +13,7 @@ node {
 	sh "buildid -n"
 	sh "make"
 
-	stage "Deploy"
-	echo "Test"
+	stash includes: 'dist/*.zip', name: 'binzip'
 }
 
 stage "Depoy"
@@ -14,16 +21,20 @@ stage "Depoy"
 parallel rpmFedora: {
 	node {
 		writeFile file: 'README.txt', text: "Fedora"
+		unstash "binzip"
+		mkdir "fedora"
 		sleep 10
 	}
 }, rpmEl6: {
 	node {
 		writeFile file: 'README.txt', text: "EL6"
+		unstash "binzip"
 		sleep 10
 	}
 }, rpmEl7: {
 	node {
 		writeFile file: 'README.txt', text: "EL7"
+		unstash "binzip"
 		sleep 10
 	}
 }, 
