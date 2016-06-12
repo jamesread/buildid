@@ -6,7 +6,7 @@ properties(
 	]
 )
 
-stage "Package"
+stage "Build"
 
 node {
 	checkout scm
@@ -16,13 +16,18 @@ node {
 	stash includes: 'dist/*.zip', name: 'binzip'
 }
 
-stage "Depoy"
+stage "Package & Publish"
 
 parallel (
 	rpmFedora: { node { ws {
 		writeFile file: 'README.txt', text: "Fedora"
 		unstash "binzip"
-		sleep 10
+
+		mv dist SOURCES
+		mkdir SPECS
+		unzip -jo SOURCES/buildid.zip "buildid/var/buildid.spec" "buildid/.buildid" -d SPECS/
+		buildid -f rpmmacro > SPECS/buildid.rpmmacro
+		rpmbuild -ba SPECS/buildid.spec 
 	}}}, 
 
 	rpmEl6: { node { ws {
