@@ -22,7 +22,6 @@ parallel rpmFedora: {
 	node {
 		writeFile file: 'README.txt', text: "Fedora"
 		unstash "binzip"
-		mkdir "fedora"
 		sleep 10
 	}
 }, rpmEl6: {
