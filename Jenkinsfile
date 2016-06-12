@@ -19,19 +19,19 @@ node {
 stage "Depoy"
 
 parallel (
-	rpmFedora: { node { ws "rpmFedora" {
+	rpmfedora: { node { ws "rpmFedora" {
 		writeFile file: 'README.txt', text: "Fedora"
 		unstash "binzip"
 		sleep 10
 	}}}, 
 
-	rpmEl6: { node { ws "rpmEl6" {
+	rpmel6: { node { ws "rpmEl6" {
 		writeFile file: 'README.txt', text: "EL6"
 		unstash "binzip"
 		sleep 10
 	}}}, 
 	
-	rpmEl7: { node { ws "rpmEl7" {
+	rpmel7: { node { ws "rpmEl7" {
 			writeFile file: 'README.txt', text: "EL7"
 			unstash "binzip"
 			sleep 10
