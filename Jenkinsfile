@@ -32,16 +32,16 @@ parallel (
 	}, 
 	
 	branch("rpmEl7") {
-			writeFile file: 'README.txt', text: "EL7"
-			unstash "binzip"
-			sleep 10
+		writeFile file: 'README.txt', text: "EL7"
+		unstash "binzip"
+		sleep 10
 	},
 
 	failFast: true
 )
 
 def branch(String label, Closure body) {
-	label: { node { ws(label) {
+	${label}: { node() { ws(label) {
 		body.call()
 	}}}
 }
