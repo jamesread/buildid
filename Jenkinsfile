@@ -41,7 +41,7 @@ parallel (
 )
 
 def branch(String label, Closure body) {
-	label: { node(label) { ws(label) {
+	label: { node { ws(label) {
 		body.call()
 	}}}
 }
