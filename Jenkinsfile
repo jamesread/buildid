@@ -23,6 +23,8 @@ parallel (
 		writeFile file: 'README.txt', text: "Fedora"
 		unstash "binzip"
 
+		echo "${WORKSPACE}"
+
 		sh 'rm -rf SOURCES'
 		sh 'mv dist SOURCES'
 		sh 'mkdir -p SPECS'
