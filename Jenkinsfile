@@ -20,6 +20,8 @@ stage "Package & Publish"
 
 parallel (
 	rpmFedora: { node { ws {
+		env.WORKSPACE = pwd() 
+
 		unstash "binzip"
 
 		sh 'rm -rf SOURCES RPMS SRPMS BUILDROOT BUILD'
@@ -27,12 +29,14 @@ parallel (
 		sh 'mkdir -p SPECS'
 		sh 'unzip -jo SOURCES/buildid.zip "buildid-*/var/buildid.spec" "buildid-*/buildid" -d SPECS/'
 		sh 'buildid -f rpmmacro > SPECS/buildid.rpmmacro'
-		sh "rpmbuild -ba SPECS/buildid.spec --define '_topdir ./' --define 'dist fc23'"
+		sh "rpmbuild -ba SPECS/buildid.spec --define '_topdir ${WORKSPACE}' --define 'dist fc23'"
 
 		archive 'RPMS/noarch/*.rpm'
 	}}}, 
 
 	rpmEl6: { node { ws {
+		env.WORKSPACE = pwd() 
+
 		unstash "binzip"
 
 		sh 'rm -rf SOURCES RPMS SRPMS BUILDROOT BUILD'
@@ -40,12 +44,14 @@ parallel (
 		sh 'mkdir -p SPECS'
 		sh 'unzip -jo SOURCES/buildid.zip "buildid-*/var/buildid.spec" "buildid-*/buildid" -d SPECS/'
 		sh 'buildid -f rpmmacro > SPECS/buildid.rpmmacro'
-		sh "rpmbuild -ba SPECS/buildid.spec --define '_topdir ./' --define 'dist el6'"
+		sh "rpmbuild -ba SPECS/buildid.spec --define '_topdir ${WORKSPACE}' --define 'dist el6'"
 
 		archive 'RPMS/noarch/*.rpm'
 	}}}, 
 	
 	rpmEl7: { node { ws {
+		env.WORKSPACE = pwd() 
+
 		unstash "binzip"
 
 		sh 'rm -rf SOURCES RPMS SRPMS BUILDROOT BUILD'
@@ -53,7 +59,7 @@ parallel (
 		sh 'mkdir -p SPECS'
 		sh 'unzip -jo SOURCES/buildid.zip "buildid-*/var/buildid.spec" "buildid-*/buildid" -d SPECS/'
 		sh 'buildid -f rpmmacro > SPECS/buildid.rpmmacro'
-		sh "rpmbuild -ba SPECS/buildid.spec --define '_topdir ./' --define 'dist el7'"
+		sh "rpmbuild -ba SPECS/buildid.spec --define '_topdir ${WORKSPACE}' --define 'dist el7'"
 
 		archive 'RPMS/noarch/*.rpm'
 	}}}, 
