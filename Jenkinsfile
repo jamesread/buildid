@@ -28,7 +28,7 @@ parallel (
 		sh 'mkdir -p SPECS'
 		sh 'unzip -jo SOURCES/buildid.zip "buildid-*/var/buildid.spec" "buildid-*/buildid" -d SPECS/'
 		sh 'buildid -f rpmmacro > SPECS/buildid.rpmmacro'
-		sh 'rpmbuild -ba SPECS/buildid.spec --define "_topdir ${WORKSPACE}" '
+		sh "rpmbuild -ba SPECS/buildid.spec --define '_topdir ${WORKSPACE}' "
 	}}}, 
 
 	rpmEl6: { node { ws {
