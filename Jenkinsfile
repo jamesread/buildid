@@ -20,6 +20,8 @@ stage "Package & Publish"
 
 parallel (
 	rpmFedora: { node { ws {
+		env.WORKSPACE = pwd()
+
 		writeFile file: 'README.txt', text: "Fedora"
 		unstash "binzip"
 
@@ -28,7 +30,7 @@ parallel (
 		sh 'mkdir -p SPECS'
 		sh 'unzip -jo SOURCES/buildid.zip "buildid-*/var/buildid.spec" "buildid-*/buildid" -d SPECS/'
 		sh 'buildid -f rpmmacro > SPECS/buildid.rpmmacro'
-		sh "rpmbuild -ba SPECS/buildid.spec --define '_topdir ${PWD}' "
+		sh "rpmbuild -ba SPECS/buildid.spec --define '_topdir ${env.WORKSPACE}' "
 	}}}, 
 
 	rpmEl6: { node { ws {
