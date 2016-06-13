@@ -23,6 +23,7 @@ parallel (
 		writeFile file: 'README.txt', text: "Fedora"
 		unstash "binzip"
 
+		sh 'rm -rf SOURCES'
 		sh 'mv dist SOURCES'
 		sh 'mkdir -p SPECS'
 		sh 'unzip -jo SOURCES/buildid.zip "buildid-*/var/buildid.spec" "buildid-*/.buildid" -d SPECS/'
