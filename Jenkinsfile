@@ -66,9 +66,7 @@ parallel (
 )
 
 node { 
-	{
-		(manager.build.getArtifacts()).each {
-			println "Artifact: ${it}"
-		}
+	(manager.build.getArtifacts()).each {
+		println "Artifact: ${it}"
 	}
 }
