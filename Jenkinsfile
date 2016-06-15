@@ -64,3 +64,11 @@ parallel (
 
 	failFast: true
 )
+
+node { 
+	{
+		(manager.build.getArtifacts()).each {
+			println "Artifact: ${it}"
+		}
+	}
+}
