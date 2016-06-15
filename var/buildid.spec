@@ -1,4 +1,4 @@
-%include .buildid.rpmmacro
+%include SPECS/.buildid.rpmmacro
 
 Name:		buildid
 Version:	1.8.0

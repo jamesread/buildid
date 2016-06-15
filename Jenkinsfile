@@ -24,10 +24,11 @@ parallel (
 
 		unstash "binzip"
 
-		sh 'rm -rf SOURCES RPMS SRPMS BUILDROOT BUILD'
+		sh 'rm -rf SOURCES RPMS SRPMS BUILDROOT BUILD SPECS'
 		sh 'mv dist SOURCES'
 		sh 'mkdir -p SPECS'
 		sh 'unzip -jo SOURCES/buildid.zip "buildid-*/var/buildid.spec" "buildid-*/.buildid.rpmmacro" -d SPECS/'
+		
 		sh "rpmbuild -ba SPECS/buildid.spec --define '_topdir ${env.WORKSPACE}' --define 'dist fc23'"
 
 		archive 'RPMS/noarch/*.rpm'
@@ -38,7 +39,7 @@ parallel (
 
 		unstash "binzip"
 
-		sh 'rm -rf SOURCES RPMS SRPMS BUILDROOT BUILD'
+		sh 'rm -rf SOURCES RPMS SRPMS BUILDROOT BUILD SPECS'
 		sh 'mv dist SOURCES'
 		sh 'mkdir -p SPECS'
 		sh 'unzip -jo SOURCES/buildid.zip "buildid-*/var/buildid.spec" "buildid-*/.buildid.rpmmacro" -d SPECS/'
@@ -52,7 +53,7 @@ parallel (
 
 		unstash "binzip"
 
-		sh 'rm -rf SOURCES RPMS SRPMS BUILDROOT BUILD'
+		sh 'rm -rf SOURCES RPMS SRPMS BUILDROOT BUILD SPECS'
 		sh 'mv dist SOURCES'
 		sh 'mkdir -p SPECS'
 		sh 'unzip -jo SOURCES/buildid.zip "buildid-*/var/buildid.spec" "buildid-*/.buildid.rpmmacro" -d SPECS/'
