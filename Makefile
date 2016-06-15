@@ -28,6 +28,7 @@ newbuild:
 
 tests:
 	py.test tests
+
 test:tests
 
 rpm:

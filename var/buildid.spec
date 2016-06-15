@@ -1,3 +1,5 @@
+%include .buildid.rpmmacro
+
 Name:		buildid
 Version:	1.8.0
 Release:	1%{?dist}
