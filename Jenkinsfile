@@ -27,8 +27,7 @@ parallel (
 		sh 'rm -rf SOURCES RPMS SRPMS BUILDROOT BUILD'
 		sh 'mv dist SOURCES'
 		sh 'mkdir -p SPECS'
-		sh 'unzip -jo SOURCES/buildid.zip "buildid-*/var/buildid.spec" "buildid-*/buildid" -d SPECS/'
-		sh 'buildid -f rpmmacro > SPECS/buildid.rpmmacro'
+		sh 'unzip -jo SOURCES/buildid.zip "buildid-*/var/buildid.spec" "buildid-*/.buildid.rpmmacro" -d SPECS/'
 		sh "rpmbuild -ba SPECS/buildid.spec --define '_topdir ${env.WORKSPACE}' --define 'dist fc23'"
 
 		archive 'RPMS/noarch/*.rpm'
@@ -42,8 +41,7 @@ parallel (
 		sh 'rm -rf SOURCES RPMS SRPMS BUILDROOT BUILD'
 		sh 'mv dist SOURCES'
 		sh 'mkdir -p SPECS'
-		sh 'unzip -jo SOURCES/buildid.zip "buildid-*/var/buildid.spec" "buildid-*/buildid" -d SPECS/'
-		sh 'buildid -f rpmmacro > SPECS/buildid.rpmmacro'
+		sh 'unzip -jo SOURCES/buildid.zip "buildid-*/var/buildid.spec" "buildid-*/.buildid.rpmmacro" -d SPECS/'
 		sh "rpmbuild -ba SPECS/buildid.spec --define '_topdir ${env.WORKSPACE}' --define 'dist el6'"
 
 		archive 'RPMS/noarch/*.rpm'
@@ -57,8 +55,7 @@ parallel (
 		sh 'rm -rf SOURCES RPMS SRPMS BUILDROOT BUILD'
 		sh 'mv dist SOURCES'
 		sh 'mkdir -p SPECS'
-		sh 'unzip -jo SOURCES/buildid.zip "buildid-*/var/buildid.spec" "buildid-*/buildid" -d SPECS/'
-		sh 'buildid -f rpmmacro > SPECS/buildid.rpmmacro'
+		sh 'unzip -jo SOURCES/buildid.zip "buildid-*/var/buildid.spec" "buildid-*/.buildid.rpmmacro" -d SPECS/'
 		sh "rpmbuild -ba SPECS/buildid.spec --define '_topdir ${env.WORKSPACE}' --define 'dist el7'"
 
 		archive 'RPMS/noarch/*.rpm'
