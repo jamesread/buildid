@@ -36,15 +36,15 @@ def buildRpm(dist) {
 }
 
 parallel (
-	rpmFedora: { node { ws("./rpmFedora") {
+	rpmFedora: { node { ws("${pwd()}/rpmFedora") {
 		buildRpm("fc23")
 	}}}, 
 
-	rpmEl6: { node { ws("./rpmEl6") {
+	rpmEl6: { node { ws("${pwd()}/rpmEl6") {
 		buildRpm("el6")
 	}}}, 
 	
-	rpmEl7: { node { ws("./rpmEl7") {
+	rpmEl7: { node { ws("${pwd()}/rpmEl7") {
 		buildRpm("el7")
 	}}}, 
 
