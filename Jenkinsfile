@@ -1,3 +1,5 @@
+#!groovy
+
 properties(
 	[
 		[
@@ -34,15 +36,15 @@ def buildRpm(dist) {
 }
 
 parallel (
-	rpmFedora: { node { ws {
+	rpmFedora: { node { ws("./rpmFedora") {
 		buildRpm("fc23")
 	}}}, 
 
-	rpmEl6: { node { ws {
+	rpmEl6: { node { ws("./rpmEl6") {
 		buildRpm("el6")
 	}}}, 
 	
-	rpmEl7: { node { ws {
+	rpmEl7: { node { ws("./rpmEl7") {
 		buildRpm("el7")
 	}}}, 
 
