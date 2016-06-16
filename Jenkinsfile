@@ -38,6 +38,6 @@ node {
 	buildRpm("el7")	
 }
 
-(manager.build.getArtifacts()).each {
+(currentBuild.getArtifacts()).each {
 		println "Artifact: ${it}"
 }
