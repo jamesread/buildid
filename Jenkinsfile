@@ -35,9 +35,9 @@ node {
 
 	buildRpm("fc23")
 	buildRpm("el6")
-	buildRpm("el7")
+	buildRpm("el7")	
+}
 
-	(manager.build.getArtifacts()).each {
+(manager.build.getArtifacts()).each {
 		println "Artifact: ${it}"
-	}
 }
