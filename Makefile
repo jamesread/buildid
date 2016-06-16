@@ -18,8 +18,6 @@ default: newbuild clean tests
 	mkdir -p dist/buildid-$(VERSION)/app
 	cp buildid/*.py dist/buildid-$(VERSION)/app/
 	
-	cp README.md dist/buildid-$(VERSION)/
-
 	cd dist && zip -r buildid.zip buildid-$(VERSION)
 
 newbuild:
