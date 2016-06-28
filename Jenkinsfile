@@ -37,7 +37,7 @@ node {
 	buildRpm("el6")
 	buildRpm("el7")	
 
-	for (currentBuild.rawBuild.getArtifacts() : artifact) {
+	for (Object artifact : currentBuild.rawBuild.getArtifacts()) {
 			println "Artifact: ${it}"
 	}
 }
