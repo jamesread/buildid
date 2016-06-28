@@ -36,8 +36,9 @@ node {
 	buildRpm("fc23")
 	buildRpm("el6")
 	buildRpm("el7")	
+
+	(currentBuild.rawBuild.getArtifacts()).each {
+			println "Artifact: ${it}"
+	}
 }
 
-(currentBuild.rawBuild.getArtifacts()).each {
-		println "Artifact: ${it}"
-}
