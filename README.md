@@ -72,3 +72,5 @@ In keep track of builds, a .buildid file is generated at build time.
 ### I want a `.buildid` file in different formats
 
 Use the `-f` flag to specify `properties`, `json` or `yaml`. 
+
+test.
