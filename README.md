@@ -73,4 +73,4 @@ In keep track of builds, a .buildid file is generated at build time.
 
 Use the `-f` flag to specify `properties`, `json` or `yaml`. 
 
-test.
+test. 2.
