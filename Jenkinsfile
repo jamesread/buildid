@@ -39,7 +39,7 @@ node {
 	}
 
 	docker.image("centos:6").inside {
-		sh "cat /etc/os-release"
+		sh "cat /etc/redhat-release"
 		sh "ls; pwd"
 	}
 
