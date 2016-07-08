@@ -33,7 +33,7 @@ node {
 
 	stage "Package & Publish"
 
-	docker.image("centos/centos:7").inside {
+	docker.image("centos:7").inside {
 		sh "cat /etc/redhat-release"
 	}
 
