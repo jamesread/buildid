@@ -34,7 +34,18 @@ node {
 	stage "Package & Publish"
 
 	docker.image("centos:7").inside {
-		sh "cat /etc/redhat-release"
+		sh "cat /etc/os-release"
+		sh "ls; pwd"
+	}
+
+	docker.image("centos:6").inside {
+		sh "cat /etc/os-release"
+		sh "ls; pwd"
+	}
+
+	docker.image("fedora:23").inside {
+		sh "cat /etc/os-release"
+		sh "ls; pwd"
 	}
 
 	buildRpm("fc23")
