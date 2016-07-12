@@ -21,8 +21,8 @@ default: newbuild clean tests
 	cd dist && zip -r buildid.zip buildid-$(VERSION)
 
 newbuild:
-	buildid -n 
-	buildid -qf rpmmacro > .buildid.rpmmacro
+	./buildid/app.py -n 
+	./buildid/app.py -qf rpmmacro > .buildid.rpmmacro
 
 tests:
 	py.test tests
