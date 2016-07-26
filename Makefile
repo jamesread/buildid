@@ -1,4 +1,4 @@
-VERSION:=$(shell ./buildid/app.py -k version.formatted.short)
+VERSION:=$(shell ./buildid/app.py -k tag)
 
 default: newbuild clean tests
 	rm -rf dist/buildid-$(VERSION)/
@@ -18,10 +18,10 @@ default: newbuild clean tests
 	mkdir -p dist/buildid-$(VERSION)/app
 	cp buildid/*.py dist/buildid-$(VERSION)/app/
 	
-	cd dist && zip -r buildid.zip buildid-$(VERSION)
+	cd dist && zip -r buildid-$(VERSION).zip buildid-$(VERSION)
 
 newbuild:
-	./buildid/app.py -n 
+	./buildid/app.py -n
 	./buildid/app.py -qf rpmmacro > .buildid.rpmmacro
 
 tests:
