@@ -1,7 +1,7 @@
 %include SPECS/.buildid.rpmmacro
 
 Name:		buildid
-Version:	%{version_formatted_gnu}
+Version:	%{version_formatted_short}
 Release:	%{timestamp}.%{?dist}
 Summary:	Gathers information about a code build for reuse by packaging and deployment
 BuildArch:	noarch
