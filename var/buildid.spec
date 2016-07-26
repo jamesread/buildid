@@ -18,7 +18,7 @@ Requires:	python python-lxml
 buildid
 
 %prep
-%setup -q
+%setup -q -n buildid-%{version_formatted_short}-%{tag}
 
 %post
 ln -sf /usr/lib/buildid/app.py /usr/sbin/buildid
