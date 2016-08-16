@@ -28,24 +28,24 @@ node {
 	stage "Build"
 
 	checkout scm
-	sh "buildid -n"
+	sh "buildid/app.py -n"
 	sh "make"
 
 	stage "Package & Publish"
 
 	docker.image("centos:7").inside {
 		sh "cat /etc/os-release"
-		sh "ls; pwd"
+		sh "ls; pwd; env"
 	}
 
 	docker.image("centos:6").inside {
 		sh "cat /etc/redhat-release"
-		sh "ls; pwd"
+		sh "ls; pwd; env"
 	}
 
 	docker.image("fedora:23").inside {
 		sh "cat /etc/os-release"
-		sh "ls; pwd"
+		sh "ls; pwd; env"
 	}
 
 	buildRpm("fc23")
