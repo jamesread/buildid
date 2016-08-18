@@ -34,7 +34,6 @@ node {
 	stage "Package & Publish"
 
 	docker.image("centos:7").inside {
-		sh "cat /etc/os-release"
 		sh "ls; pwd; env"
 	}
 
