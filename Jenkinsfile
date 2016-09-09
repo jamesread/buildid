@@ -40,14 +40,11 @@ node {
 
 stage "Package & Publish"
 
-parallel 
-centos7: { node {
+parallel centos7: { node {
 	buildRpm("el7")
-}},
-centos6: { node {
+}i}, centos6: { node {
 	buildRpm("el6")
-}}
-fc24: { node { 
+}}, fc24: { node { 
 	buildRpm("fc24")
 }}
 
