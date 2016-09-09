@@ -34,7 +34,6 @@ node {
 
 	deleteDir()
 	checkout scm
-	sh "buildid/app.py -n"
 	sh "make"
 	stash includes: "dist/*.zip", name: "binaries"
 }
