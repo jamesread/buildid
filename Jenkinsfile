@@ -15,11 +15,10 @@ def buildRpm(dist) {
 
 	env.WORKSPACE = pwd() 
 
-	sh 'find'
-	sh "echo ws = ${env.WORKSPACE}"
+	sh "find ${env.WORKSPACE}"
 
 	sh 'mkdir -p SPECS SOURCES'
-	sh 'cp dist/buildid.zip SOURCES/'
+	sh "cp dist/buildid*.zip SOURCES/buildid.zip"
 
 	sh 'unzip -jo SOURCES/buildid.zip "buildid-*/var/buildid.spec" "buildid-*/.buildid.rpmmacro" -d SPECS/'
 	
