@@ -15,7 +15,9 @@ def buildRpm(dist) {
 
 	env.WORKSPACE = pwd() 
 
-	sh 'rm -rf SOURCES RPMS SRPMS BUILDROOT BUILD SPECS'
+	sh 'find'
+	sh "echo ws = ${env.WORKSPACE}"
+
 	sh 'mkdir -p SPECS SOURCES'
 	sh 'cp dist/buildid.zip SOURCES/'
 
@@ -35,7 +37,7 @@ node {
 	checkout scm
 	sh "buildid/app.py -n"
 	sh "make"
-	stash includes: "dist", name: "binaries"
+	stash includes: "dist/*.zip", name: "binaries"
 }
 
 stage "Package & Publish"
