@@ -9,6 +9,10 @@ properties(
 )
 
 def buildRpm(dist) {
+	deleteDir()
+
+	unstash 'binaries'
+
 	env.WORKSPACE = pwd() 
 
 	sh 'rm -rf SOURCES RPMS SRPMS BUILDROOT BUILD SPECS'
@@ -27,30 +31,27 @@ def buildRpm(dist) {
 node {
 	stage "Build"
 
+	deleteDir()
 	checkout scm
 	sh "buildid/app.py -n"
 	sh "make"
+	stash includes: "dist/*.zip", name "binaries"
+}
 
-	stage "Package & Publish"
+stage "Package & Publish"
 
-	docker.image("centos:7").inside {
-		sh "ls; pwd; env"
-	}
-
-	docker.image("centos:6").inside {
-		sh "cat /etc/redhat-release"
-		sh "ls; pwd; env"
-	}
-
-	docker.image("fedora:23").inside {
-		sh "cat /etc/os-release"
-		sh "ls; pwd; env"
-	}
-
-	buildRpm("fc23")
+parallel 
+centos7: { node {
+	buildRpm("el7")
+}},
+centos6: { node {
 	buildRpm("el6")
-	buildRpm("el7")	
+}}
+fc24: { node { 
+	buildRpm("fc24")
+}}
 
+node {
 	for (Object artifact : currentBuild.rawBuild.getArtifacts()) {
 			println "Artifact: ${artifact}"
 	}
