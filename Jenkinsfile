@@ -41,13 +41,17 @@ node {
 
 stage "Package & Publish"
 
-parallel centos7: { node {
+node {
 	buildRpm("el7")
-}i}, centos6: { node {
+}
+
+node {
 	buildRpm("el6")
-}}, fc24: { node { 
+}
+
+node { 
 	buildRpm("fc24")
-}}
+}
 
 node {
 	for (Object artifact : currentBuild.rawBuild.getArtifacts()) {
