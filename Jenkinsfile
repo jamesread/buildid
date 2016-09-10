@@ -21,6 +21,7 @@ def buildRpm(dist) {
 	sh "cp dist/buildid*.zip SOURCES/buildid.zip"
 
 	sh 'unzip -jo SOURCES/buildid.zip "buildid-*/var/buildid.spec" "buildid-*/.buildid.rpmmacro" -d SPECS/'
+	sh "find ${env.WORKSPACE}"
 	
 	sh "rpmbuild -ba SPECS/buildid.spec --define '_topdir ${env.WORKSPACE}' --define 'dist ${dist}'"
 
