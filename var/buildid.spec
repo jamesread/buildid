@@ -9,7 +9,7 @@ BuildArch:	noarch
 Group:		Applications/System
 License:	GPLv2
 URL:		http://github.com/jamesread/buildid
-Source0:	buildid.zip
+Source0:	buildid-%{tag}.zip
 
 BuildRequires:	zip
 Requires:	python python-lxml
