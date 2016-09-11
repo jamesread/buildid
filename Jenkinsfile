@@ -55,7 +55,7 @@ node {
 
 node {
 	for (Object artifact : currentBuild.rawBuild.getArtifacts()) {
-		sh "curl -F 'filename=@${artifact}' http://ci.teratan.net/manager/upload.php "
+		sh "curl -F 'filename=@${artifact.getDisplayPath()}' http://ci.teratan.net/manager/upload.php "
 	}
 }
 
