@@ -55,6 +55,7 @@ node {
 
 @NonCPS
 def postArtifacts() {
+	unarchive()
 	for (Object artifact : currentBuild.rawBuild.getArtifacts()) {
 		sh "curl -F 'filename=@${artifact}' http://ci.teratan.net/manager/upload.php "
 	}
