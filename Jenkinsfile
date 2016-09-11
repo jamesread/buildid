@@ -53,12 +53,14 @@ node {
 	buildRpm("fc24")
 }
 
-node {
+@NonCPS
+def postArtifacts() {
 	for (Object artifact : currentBuild.rawBuild.getArtifacts()) {
-		def artifactPath = (String) artifact.getDisplayPath()
-		println "${artifactPath}"
-		sh "echo ${artifactPath}"
-//		sh "curl -F 'filename=@${artifactPath}' http://ci.teratan.net/manager/upload.php "
+		sh "curl -F 'filename=@${artifact}' http://ci.teratan.net/manager/upload.php "
 	}
+}
+
+node {
+	postArtifacts();
 }
 
