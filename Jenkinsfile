@@ -26,6 +26,7 @@ def buildRpm(dist) {
 	sh "rpmbuild -ba SPECS/buildid.spec --define '_topdir ${env.WORKSPACE}' --define 'dist ${dist}'"
 
 	archive 'RPMS/noarch/*.rpm'
+	stash includes: "RPMS/noarch/*.rpm", name: "${dist}"
 }
 
 
@@ -55,6 +56,9 @@ node {
 
 @NonCPS
 def postArtifacts() {
+	unstash('fc24')
+	unstash('el6')
+	unstash('el7')
 	for (Object artifact : currentBuild.rawBuild.getArtifacts()) {
 		sh "curl -F 'filename=@${artifact.getHref()}' http://ci.teratan.net/manager/upload.php "
 	}
