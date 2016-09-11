@@ -56,14 +56,19 @@ node {
 
 @NonCPS
 def postArtifacts() {
+	println "foo"
 	unstash 'el6'
 	unstash 'el7'
 	unstash 'fc24'
 	sh "find"
 
+	println "foo ${currentBuild.rawBuild.getArtifacts()}"
+
 	for (Object artifact : currentBuild.rawBuild.getArtifacts()) {
 		sh "curl -F 'filename=@${artifact}' http://ci.teratan.net/manager/upload.php "
 	}
+
+	println "foo"
 }
 
 node {
