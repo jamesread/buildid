@@ -72,6 +72,7 @@ def postArtifacts() {
 }
 
 node {
+	deleteDir()
 	postArtifacts();
 }
 
