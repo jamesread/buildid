@@ -55,22 +55,3 @@ node {
 	buildRpm("fc24")
 }
 
-@NonCPS
-def postArtifacts() {
-	unstash('fc24')
-	deleteDir()
-
-	unstash('el6')
-	deleteDir()
-
-	unstash('el7')
-	deleteDir()
-	for (Object artifact : currentBuild.rawBuild.getArtifacts()) {
-		sh "curl -F 'filename=@${artifact.getHref()}' http://ci.teratan.net/manager/upload.php "
-	}
-}
-
-node {
-	postArtifacts();
-}
-
