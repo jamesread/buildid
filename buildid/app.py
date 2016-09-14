@@ -14,6 +14,7 @@ if __name__ == "__main__":
 	argparser.add_argument("-k", "--key", help = "print the value of just one key")
 	argparser.add_argument("-K", "--keySearch", help = "print the values where the key matches this search term")
 	argparser.add_argument("-w", "--filename", default = None)
+        argparser.add_argument("-W", "--writeCopy", default = None)
 	argparser.add_argument("-q", "--quiet", action = 'store_true')
 	argparser.add_argument("-p", "--plain", action = "store_true")
 	argparser.add_argument("-u", "--update", action = "store_true")
@@ -88,4 +89,7 @@ if __name__ == "__main__":
 					printInfo("or see all these properties again without this message with -q");
 					print("")
 
-				print(outputHandler.toString())
+                                if args.writeCopy != None:
+                                    outputHandler.write(filename = args.writeCopy)
+                                else:
+                                    print(outputHandler.toString())
