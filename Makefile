@@ -1,6 +1,6 @@
-VERSION:=$(shell ./buildid/app.py -k tag)
-
 default: newbuild clean tests
+	$(eval VERSION := $(shell ./buildid/app.py -k tag))
+
 	rm -rf dist/buildid-$(VERSION)/
 	mkdir -p dist/buildid-$(VERSION)/
 

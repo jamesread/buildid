@@ -3,7 +3,8 @@
 properties(
 	[
 		[
-			$class: 'jenkins.model.BuildDiscarderProperty', strategy: [$class: 'LogRotator', numToKeepStr: '10', artifactNumToKeepStr: '10']
+			$class: 'jenkins.model.BuildDiscarderProperty', strategy: [$class: 'LogRotator', numToKeepStr: '10', artifactNumToKeepStr: '10'],
+			$class: 'CopyArtifactPermissionProperty', projectNames: '*'
 		]
 	]
 )
@@ -21,10 +22,12 @@ def buildRpm(dist) {
 	sh "cp dist/buildid*.zip SOURCES/buildid.zip"
 
 	sh 'unzip -jo SOURCES/buildid.zip "buildid-*/var/buildid.spec" "buildid-*/.buildid.rpmmacro" -d SPECS/'
+	sh "find ${env.WORKSPACE}"
 	
 	sh "rpmbuild -ba SPECS/buildid.spec --define '_topdir ${env.WORKSPACE}' --define 'dist ${dist}'"
 
 	archive 'RPMS/noarch/*.rpm'
+	stash includes: "RPMS/noarch/*.rpm", name: "${dist}"
 }
 
 
@@ -40,17 +43,15 @@ node {
 
 stage "Package & Publish"
 
-parallel centos7: { node {
+node {
 	buildRpm("el7")
-}i}, centos6: { node {
-	buildRpm("el6")
-}}, fc24: { node { 
-	buildRpm("fc24")
-}}
+}
 
 node {
-	for (Object artifact : currentBuild.rawBuild.getArtifacts()) {
-			println "Artifact: ${artifact}"
-	}
+	buildRpm("el6")
+}
+
+node { 
+	buildRpm("fc24")
 }
 
