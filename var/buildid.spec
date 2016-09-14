@@ -24,7 +24,7 @@ buildid
 ln -sf /usr/lib/buildid/app.py /usr/sbin/buildid
 
 %postun
-if [ "$1" -eq 0 ]; then;
+if [ "$1" -eq 0 ]; then
 	rm -f /usr/sbin/buildid
 fi
 
