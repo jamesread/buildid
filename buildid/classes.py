@@ -286,8 +286,11 @@ class BuildIdFileHandler:
 		pass
 		#raise NotImplementedError()
 
-	def write(self, properties):
-		handle = open(self.getFilename(), "w");
+	def write(self, properties = None, filename = None):
+                if filename == None:
+                    filename = self.getFilename()
+
+		handle = open(filename, "w");
 		handle.write(self.toString());
 		handle.close()
 

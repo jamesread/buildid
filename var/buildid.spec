@@ -24,7 +24,9 @@ buildid
 ln -sf /usr/lib/buildid/app.py /usr/sbin/buildid
 
 %postun
-rm -f /usr/sbin/buildid
+if [ "$1" -eq 0 ]; then
+	rm -f /usr/sbin/buildid
+fi
 
 %build
 mkdir -p "%{buildroot}/usr/lib/buildid/"
