@@ -59,6 +59,19 @@ PACKAGE_FILENAME-myproject-1.0.0-win.zip
 
 ## FAQ 
 
+### Using buildid with Gradle
+
+	plugins {
+		id "com.github.jamesread.buildid" version "1.10"
+	}
+
+	buildid.newBuild()
+	
+	println buildid.get("tag")
+	println buildid.get("version.formatted.short")
+	... etc
+
+
 ### How does this work?
 
 buildid generates a bunch of facts about your build by looking at files in the

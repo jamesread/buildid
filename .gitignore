@@ -3,3 +3,5 @@ dist
 .buildid*
 **/*.pyc
 **/*.swp
+**/.gradle
+var/gradle-plugin/build
