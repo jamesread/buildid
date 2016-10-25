@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+from __future__ import print_function
+
 if __name__ == "__main__":
 	import argparse
 	import ConfigParser as configparser
@@ -65,7 +67,7 @@ if __name__ == "__main__":
 		printInfo("Wrote file: " + os.getcwd() + "/" + outputHandler.getFilename() + ". View the file or just run `buildid` again to see all the properties.");
 
 		if settings.info:
-			print outputHandler.toString() + "\n"
+			print(outputHandler.toString() + "\n")
 
 	else:
 		if not inputHandler.fileExists():
@@ -74,10 +76,15 @@ if __name__ == "__main__":
 			properties = inputHandler.read()
 
 			if args.key:
+                                if settings.plain:
+                                    keyEnding = ""
+                                else:
+                                    keyEnding = "\n"
+
 				if args.key in properties:
-					print(properties[args.key])
+					print(properties[args.key], end=keyEnding)
 				else: 
-					print(args.key + " was not found.");
+					print(args.key + " was not found.", end=keyEnding);
 			elif args.keySearch:
 				for key in properties:
 					if args.keySearch in key:
