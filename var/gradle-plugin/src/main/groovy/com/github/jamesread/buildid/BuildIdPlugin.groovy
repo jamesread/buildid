@@ -14,8 +14,10 @@ class BuildIdPlugin implements Plugin<Project> {
 	void apply(Project project) {
 		project.extensions.create("buildid", BuildIdImpl)
 
-		project.task("greeting") << {
-			println "buildid: ${project.buildid.message}"
+		project.task("greeting") {
+			doLast {
+				println "buildid: ${project.buildid.message}"
+			}
 		}
 	}
 }
