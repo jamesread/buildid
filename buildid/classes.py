@@ -98,6 +98,18 @@ class VersionIdentifier:
 
         return False
 
+    def __lt__(self, othr):
+        if isinstance(othr, VersionIdentifier):
+            return (self.major, self.minor, self.release) < (othr.major, othr.minor, othr.release)
+
+        return False
+
+    def __gt__(self, othr):
+        if isinstance(othr, VersionIdentifier):
+            return (self.major, self.minor, self.release) > (othr.major, othr.minor, othr.release)
+
+        return False
+
     def __str__(self):
         return self.get_formatted_gnu()
 

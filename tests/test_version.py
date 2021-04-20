@@ -12,8 +12,8 @@ class VersionIdentifierTest(unittest.TestCase):
 	def test_format_v101(self):
 		v = VersionIdentifier(1, 0, 1)
 
-		self.assertEqual(v.getFormattedGnu(), "1.0.1")
-		self.assertEqual(v.getFormattedWin(), "1.0.1.0")
+		self.assertEqual(v.get_formatted_gnu(), "1.0.1")
+		self.assertEqual(v.get_formatted_win(), "1.0.1.0")
 
 	def test_comparisons(self):
 		v1 = VersionIdentifier(1, 0, 1)
