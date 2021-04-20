@@ -10,7 +10,6 @@ import logging
 from lxml import etree
 
 class BuildId(dict):
-    projectTitle = "untitled project"
     version = None
 
     def __init__(self):
