@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 import time
 import re
 import platform
@@ -7,18 +5,59 @@ from socket import gethostname
 import os
 import subprocess
 import abc
+import logging
+
 from lxml import etree
 
-import settings
+class BuildId(dict):
+    projectTitle = "untitled project"
+    version = None
 
-properties = dict()
+    def __init__(self):
+        super().__init__()
 
-try:
-    from colorama import init as coloramainit, Fore, Style
+        self["timestamp"] = str(int(time.time()))
 
-    coloramainit()
-except:
-    pass
+        self["buildhost.platform"] = platform.platform()
+        self["buildhost.system"] = platform.system()
+        self["buildhost.release"] = platform.release()
+        self["buildhost.version"] = platform.version()
+        self["buildhost.hostname"] = gethostname()
+
+        if is_in_jenkins():
+            self['jenkins.url'] = os.environ['JENKINS_URL']
+            self['jenkins.buildid'] = os.environ['BUILD_ID']
+            self['jenkins.buildnumber'] = os.environ['BUILD_NUMBER']
+            self['jenkins.buildurl'] = os.environ['BUILD_URL']
+            self['jenkins.job_name'] = os.environ['JOB_NAME']
+            self['jenkins.node'] = os.environ['NODE_NAME']
+
+        if is_git():
+            self["git.branch"] = get_git_branch()
+            self["git.revision"] = get_git_revision()
+            self["git.revision.short"] = get_git_revision()[0:7]
+
+    def set_version(self, version):
+        self.version = version
+
+        self["tag"] = self.get_package_tag(self.version)
+        self["version.major"] = self.version.major
+        self["version.minor"] = self.version.minor
+        self["version.release"] = self.version.release
+        self["version.revision"] = self.version.revision
+        self["version.formatted.gnu"] = self.version.get_formatted_gnu()
+        self["version.formatted.short"] = self.version.get_formatted_short()
+        self["version.formatted.win"] = self.version.get_formatted_win()
+
+    def get_source_tag(self):
+        if is_release_build() and is_everything_commited():
+            return get_commit_tag()
+
+        return self['timestamp']
+
+    def get_package_tag(self, version):
+        return version.get_formatted_platform() + "-" + self.get_source_tag()
+
 
 class VersionIdentifier:
     major = 0
@@ -32,27 +71,27 @@ class VersionIdentifier:
         self.revision = revision
         self.release = release
 
-    def getFormattedShort(self):
+    def get_formatted_short(self):
         return str(self.major) + "." + str(self.minor) + "." + str(self.revision)
 
-    def getFormattedGnu(self):
-        if isEmpty(self.release):
+    def get_formatted_gnu(self):
+        if is_none_or_empty_string(self.release):
             rel = ''
         else:
             rel = '-' + str(self.release)
 
         return str(self.major) + "." + str(self.minor) + "." + str(self.revision) + rel
 
-    def getFormattedWin(self):
-        if isEmpty(self.release):
-            rel = '.0';
+    def get_formatted_win(self):
+        if is_none_or_empty_string(self.release):
+            rel = '.0'
         else:
             rel = '.' + str(self.release)
 
         return str(self.major) + "." + str(self.minor) + "." + str(self.revision) + rel
 
-    def getFormattedPlatform(self):
-        return self.getFormattedGnu()
+    def get_formatted_platform(self):
+        return self.get_formatted_gnu()
 
     def __eq__(self, othr):
         if isinstance(othr, VersionIdentifier):
@@ -60,22 +99,13 @@ class VersionIdentifier:
 
         return False
 
-    def __cmp__(self, othr):
-        if isinstance(othr, VersionIdentifier):
-            return cmp(
-                (self.major, self.minor, self.release),
-                (othr.major, othr.minor, othr.release)
-            )
-
-        return 0
-
     def __str__(self):
-        return self.getFormattedGnu()
-    
+        return self.get_formatted_gnu()
+
     def __repr__(self):
         return self.__str__()
 
-def parseVersionTranslator(config):
+def parse_version_translator(config):
     translator = config["translator"].lower()
 
     if translator == "plainfile":
@@ -84,7 +114,9 @@ def parseVersionTranslator(config):
     if translator == "rpmspec":
         return VersionTranslatorRpmSpec(config)
 
-    printWarn("Translator not supported: " + translator)
+    logging.warning("Translator not supported: %s", translator)
+
+    return None
 
 class VersionTranslator:
     def __init__(self, config = None):
@@ -97,7 +129,7 @@ class VersionTranslator:
         return self.name()
 
 class VersionReader(VersionTranslator):
-    def isReadable(self):
+    def is_readable(self):
         return True
 
     @abc.abstractmethod
@@ -105,99 +137,97 @@ class VersionReader(VersionTranslator):
         pass
 
     @abc.abstractmethod
-    def getSource(self):
+    def get_source(self):
         return "???"
 
 class VersionWriter(VersionTranslator):
     @abc.abstractmethod
-    def write(self):
+    def write(self, version):
         pass
 
 class VersionTranslatorRpmSpec(VersionReader):
-    def getSource(self):
+    def get_source(self):
         return self.config['filename']
 
     def read(self):
-        version = reallyCheekyRegex(self.config["filename"], "Version\:[ \t]+([\d\.\-]+)")
-        version = parseVersion(version)
+        version = regex_file(self.config["filename"], r"Version\:[ \t]+([\d\.\-]+)")
+        version = parse_version(version)
 
         return version
 
 class VersionTranslatorPlainFile(VersionReader, VersionWriter):
-    def getSource(self):
+    def get_source(self):
         return 'VERSION'
 
     def read(self):
         version = VersionIdentifier()
-    
-        try:
-            versionFile = open('VERSION', 'r')
-            content = versionFile.read()
-            versionFile.close()
 
-            version = parseVersion(content)
+        try:
+            version_file = open('VERSION', 'r')
+            content = version_file.read()
+            version_file.close()
+
+            version = parse_version(content)
         except IOError as e:
-            pass
-        except Exception as e:
             print(e)
 
         return version
 
     def write(self, version):
         f = open("VERSION", "w")
-        f.write(version.getFormattedGnu())
+        f.write(version.get_formatted_gnu())
         f.close()
 
-    def isReadable(self):
+    def is_readable(self):
         return os.path.exists("VERSION")
 
 class VersionTranslatorPomFile(VersionReader):
-    def isReadable(self):
+    def is_readable(self):
         return os.path.exists("pom.xml")
 
-    def getSource(self):
+    def get_source(self):
         return 'pom.xml'
 
     def read(self):
         version = VersionIdentifier()
 
         try:
-            version = reallyCheekyXpath("pom.xml", "//project/version/text()")[0]
-            version = parseVersion(version)
-        except:
+            version = get_xpath_value_from_file("pom.xml", "//project/version/text()")[0]
+            version = parse_version(version)
+        except IOError:
             pass
 
         return version
 
-def parseVersion(versionString):
+def parse_version(version_string):
     version = VersionIdentifier()
 
-    versionRegex = "(\d+)\.(\d+)\.(\d+)[\.-]*(\d*)"
-    m = re.search(versionRegex, versionString)
+    version_regex = r"(\d+)\.(\d+)\.(\d+)[\.-]*(\d*)"
+    matches = re.search(version_regex, version_string)
 
-    if m != None:
-        version.major = int(m.group(1))
-        version.minor = int(m.group(2))
-        version.revision = int(m.group(3))
-        version.release = m.group(4)
-    elif settings.debug:
-        print("VERSION file did not match regex.")
+    if matches is not None:
+        version.major = int(matches.group(1))
+        version.minor = int(matches.group(2))
+        version.revision = int(matches.group(3))
+        version.release = matches.group(4)
+    else:
+        logging.info("VERSION file did not match regex.")
 
     return version
 
-def reallyCheekyRegex(filename, regex):
+def regex_file(filename, regex):
     f = open(filename, "r")
     content = f.read()
     f.close()
 
     m = re.findall(regex, content, re.MULTILINE)
 
-    if m != None and len(m) > 0:
+    if m is not None and len(m) > 0:
         return m[0]
 
     return ""
 
-def reallyCheekyXpath(filename, xpath):
+def get_xpath_value_from_file(filename, xpath):
     f = open(filename, "r")
     xml = f.read()
     f.close()
@@ -205,228 +235,168 @@ def reallyCheekyXpath(filename, xpath):
     # aherm
     xml = re.sub('xmlns=".+"', "", xml)
 
-    pomTree = etree.fromstring(xml)
-    res = pomTree.xpath(xpath)
+    pom_tree = etree.fromstring(xml)
+    res = pom_tree.xpath(xpath)
 
     return res
 
-def printWarn(message):
-    printPrefix("WARN", message, 3)
-
-def printInfo(message):
-    printPrefix("INFO", message, 4)
-
-def printDebug(message):
-    printPrefix("DEBG", message, 1)
-
-def printPrefix(prefix, message, color = None):
-    startColor = ""
-    endColor = ""
-
-    if hasColors():
-        if color == 1:
-            startColor = Style.BRIGHT + Fore.RED
-            endColor = Style.RESET_ALL
-
-        if color == 3:
-            startColor = Style.BRIGHT + Fore.MAGENTA
-            endColor = Style.RESET_ALL
-
-        if color == 4: 
-            startColor = Style.BRIGHT + Fore.BLUE
-            endColor = Style.RESET_ALL
-
-    print("[" + startColor + prefix + endColor + "] " + str(message));
-
-def hasColors():
-    hasColors = True
-    
-    from os import environ
-    
-    if "TERM" in environ:
-        if "xterm" not in environ['TERM']:
-            return False 
-
-    try: 
-        if Fore.BLACK:
-            pass
-    except:
-        hasColors = False
-
-    if settings.plain:
-        hasColors = False
-
-    return hasColors
-
 class BuildIdFileHandler:
-    def getFilename(self):  
-        if settings.filename is not None:
-            return settings.filename
-        else:
-            alts = list();
-            alts.append("SPECS/.buildid")
-            alts.append("SPECS/buildid")
+    def get_filename(self):
+        alts = list()
+        alts.append(".buildid")
+        alts.append("SPECS/.buildid")
+        alts.append("SPECS/buildid")
 
-            for filename in alts:
-                if os.path.exists(filename):
-                    return filename
+        for filename in alts:
+            if os.path.exists(filename):
+                return filename
 
-        return self.getDefaultFilename()
+        return self.get_default_filename()
 
-    def getDefaultFilename(self):
+    def get_default_filename(self):
         return ".buildid"
-    
-    def fileExists(self):
-        return os.path.exists(self.getFilename())
 
-    def toString(self):
+    def file_exists(self):
+        return os.path.exists(self.get_filename())
+
+    def to_string(self, properties):
         raise NotImplementedError()
 
-    def read(self):
-        pass
-        #raise NotImplementedError()
+    def read(self, properties):
+        raise NotImplementedError()
 
     def write(self, properties = None, filename = None):
-        if filename == None:
-           filename = self.getFilename()
+        if filename is None:
+            filename = self.get_filename()
 
-        handle = open(filename, "w");
-        handle.write(self.toString());
+        handle = open(filename, "w")
+        handle.write(self.to_string(properties))
         handle.close()
 
 class BuildIdFileHandlerIni(BuildIdFileHandler):
-    def getDefaultFilename(self):
+    def get_default_filename(self):
         return ".buildid"
 
-    def toString(self):
-        global properties 
-
+    def to_string(self, properties):
         buf = ""
         for key in sorted(properties):
-            buf += self.toStringSingle(key) + "\n"
+            buf += self.to_string_single(properties, key) + "\n"
 
         return buf.strip()
 
-    def toStringSingle(self, key):
-        global properties 
+    def to_string_single(self, properties, key):
+        return key + "=" + str(properties[key])
 
-        return (key + "=" + str(properties[key]))
-
-
-    def read(self):
-        global properties
-        properties = dict()
-
-        content = open(self.getFilename(), 'r').readlines()
+    def read(self, properties):
+        content = open(self.get_filename(), 'r').readlines()
 
         for line in content:
-            key, value = line.strip().split("=");
-            
+            key, value = line.strip().split("=")
+
             properties[key] = value
 
         return properties
 
 class BuildIdFileHandlerRpmMacros(BuildIdFileHandler):
-    def toString(self):
-        global properties
-
+    def to_string(self, properties):
         buf = ""
 
         for key in sorted(properties):
             buf += "%define " + key.replace(".", "_") + " " + str(properties[key]) + "\n"
 
-        return buf.strip();
+        return buf.strip()
 
-def parseVersionTranslatorsFromConfig(cfgparser):
-    global versionReaders, versionWriters 
+    def read(self, properties):
+        pass
 
-    for section in cfgparser.sections():
-        if cfgparser.has_option(section, "type") and cfgparser.has_option(section, "translator"):
-            typeOfThing = cfgparser.get(section, "type")
+class VersionHelpers():
+    versionReaders = [ VersionTranslatorPlainFile(), VersionTranslatorPomFile() ]
+    versionWriters = [ VersionTranslatorPlainFile() ]
 
-            translatorConfig = dict()
-            
-            for cfg in cfgparser.items(section):
-                translatorConfig[cfg[0]] = cfg[1]
+    def parse_version_translators_from_config(self, cfgparser):
+        for section in cfgparser.sections():
+            if cfgparser.has_option(section, "type") and cfgparser.has_option(section, "translator"):
+                translatorConfig = dict()
 
-            inst = parseVersionTranslator(translatorConfig)
+                for cfg in cfgparser.items(section):
+                    translatorConfig[cfg[0]] = cfg[1]
 
-            if isinstance(inst, VersionReader):
-                versionReaders.append(inst)
+                inst = parse_version_translator(translatorConfig)
 
-            if isinstance(inst, VersionWriter):
-                versionWriters.append(inst)
+                if isinstance(inst, VersionReader):
+                    self.versionReaders.append(inst)
 
-versionReaders = [ VersionTranslatorPlainFile(), VersionTranslatorPomFile() ]
-versionWriters = [ VersionTranslatorPlainFile() ]
+                if isinstance(inst, VersionWriter):
+                    self.versionWriters.append(inst)
 
-def getVersionFromReaders():
-    global versionReaders
+    def get_version_from_readers(self):
+        versions = []
 
-    versions = []
+        for reader in self.versionReaders:
+            if reader.is_readable():
+                versionFromReader = reader.read()
 
-    for reader in versionReaders:
-        if reader.isReadable():
-            versionFromReader = reader.read()
+                versions.append(versionFromReader)
 
-            versions.append(versionFromReader)
+                logging.info("Reading version using: " + reader.name() + " (" + reader.get_source() + ") = " + versionFromReader.get_formatted_gnu() )
 
-            printInfo("Reading version using: " + reader.name() + " (" + reader.getSource() + ") = " + versionFromReader.getFormattedGnu() )
-    
-    tmp = None
-    for version in versions:
-        if tmp == None:
-            tmp = version
-            continue
+        tmp = None
+        for version in versions:
+            if tmp is None:
+                tmp = version
+                continue
 
-        if tmp != version:
-            printWarn("All version readers are not consistant! Using the first: " + versions[0].getFormattedGnu());
-            printWarn("Or re-run buildid with -u to update version sources")
+            if tmp != version:
+                logging.warning("All version readers are not consistant! Using the first: %s", versions[0].get_formatted_gnu())
+                logging.warning("Or re-run buildid with -u to update version sources")
 
-            break
+                break
 
-    if len(versions) == 0:
-        return VersionIdentifier()
-    else:
+        if len(versions) == 0:
+            return VersionIdentifier()
+
         return versions[0] # first one only at the mo
 
+    def write_all_version_writers(self, version):
+        for writer in self.versionWriters:
+            writer.write(version)
 
-def runCommand(cmd):
+def run_command(cmd):
     process = subprocess.Popen(cmd, shell = True, stdout=subprocess.PIPE)
     output = "".join(str(process.stdout.readlines())).strip()
 
     return output
 
-def checkGitIgnore():
+def check_git_ignore():
     if not os.path.exists(".gitignore"):
-        return 
+        return
 
-    gitIgnoreFile = open(".gitignore", 'r');
+    gitIgnoreFile = open(".gitignore", 'r')
 
     content = gitIgnoreFile.read()
 
     if "buildid" not in content:
-        printWarn("You should ignore your buildid in .gitignore.")
+        logging.warning("You should ignore your buildid in .gitignore.")
 
     gitIgnoreFile.close()
 
 
-def isGit():
-    checkGitIgnore();
-        
+def is_git():
+    check_git_ignore()
+
     return os.path.exists(".git")
 
-def isInJenkins():
+def is_in_jenkins():
     return "JENKINS_URL" in os.environ
 
-def getGitRevision():
-    return runCommand("git rev-parse HEAD")
+def get_git_revision():
+    return run_command("git rev-parse HEAD")
 
-def getGitBranch():
-    return runCommand("git branch | awk '{print $2}'")
+def get_git_branch():
+    return run_command("git branch | awk '{print $2}'")
 
-def isEmpty(value):
-    if value == None:
+def is_none_or_empty_string(value):
+    if value is None:
         return True
 
     if value == 0:
@@ -437,70 +407,19 @@ def isEmpty(value):
 
     return False
 
-def getCommitTag():
-    if isGit():
-        return getGitRevision()
-    else:
-        return '00000'
+def get_commit_tag():
+    if is_git():
+        return get_git_revision()
 
-def isReleaseBuild():
+    return '00000'
+
+def is_release_build():
     return False
 
-def getSourceTag():
-    global properties 
-
-    if isReleaseBuild() and isEverythingCommited():
-        return getCommitTag()
-    else:
-        return properties['timestamp']
-
-def getPackageTag(version):
-    return version.getFormattedPlatform() + "-" + getSourceTag()
-
-def isEverythingCommited():
+def is_everything_commited():
     return False
 
-def saveVersion(version):
-    for writer in versionWriters:
-        writer.write(version)
-
-def buildProperties(version):
-    global properties
-
-    properties["timestamp"] = str(int(time.time()))
-
-    properties["version.major"] = version.major
-    properties["version.minor"] = version.minor
-    properties["version.release"] = version.release
-    properties["version.revision"] = version.revision
-    properties["version.formatted.gnu"] = version.getFormattedGnu()
-    properties["version.formatted.short"] = version.getFormattedShort()
-    properties["version.formatted.win"] = version.getFormattedWin()
-    properties["tag"] = getPackageTag(version)
-    properties["buildhost.platform"] = platform.platform()
-    properties["buildhost.system"] = platform.system()
-    properties["buildhost.release"] = platform.release()
-    properties["buildhost.version"] = platform.version()
-    properties["buildhost.hostname"] = gethostname()
-
-    if isInJenkins():
-        properties['jenkins.url'] = os.environ['JENKINS_URL']
-        properties['jenkins.buildid'] = os.environ['BUILD_ID']
-        properties['jenkins.buildnumber'] = os.environ['BUILD_NUMBER']
-        properties['jenkins.buildurl'] = os.environ['BUILD_URL']
-        properties['jenkins.job_name'] = os.environ['JOB_NAME']
-        properties['jenkins.node'] = os.environ['NODE_NAME']
-
-    if isGit():
-        properties["git.branch"] = getGitBranch()
-        properties["git.revision"] = getGitRevision();
-        properties["git.revision.short"] = getGitRevision()[0:7];
-
-
-    return properties
-
-def getFileHandlers():
+def get_file_handlers():
     return {
         "ini": BuildIdFileHandlerIni(),
     }
-

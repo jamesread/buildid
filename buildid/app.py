@@ -1,15 +1,15 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
-from __future__ import print_function
+import os
+import logging
+import configargparse
+from classes import BuildIdFileHandlerIni, BuildIdFileHandlerRpmMacros, VersionHelpers, BuildId # parse_version_translators_from_config
 
-if __name__ == "__main__":
-    import argparse
-    import configparser
-
-    argparser = argparse.ArgumentParser();
-    argparser.add_argument("-n", "--newBuild", action = 'store_true');
-    argparser.add_argument("-f", "--outputFormat", default = "ini", choices = ["ini", "rpmmacro"]);
-    argparser.add_argument("-F", "--inputFormat", default = "ini", choices = ["ini", "rpmmacro"]);
+def get_argument_parser():
+    argparser = configargparse.ArgumentParser(default_config_files = ['buildid.cfg'])
+    argparser.add_argument("-n", "--newBuild", action = 'store_true')
+    argparser.add_argument("-f", "--outputFormat", default = "ini", choices = ["ini", "rpmmacro"])
+    argparser.add_argument("-F", "--inputFormat", default = "ini", choices = ["ini", "rpmmacro"])
     argparser.add_argument("--platform", default = None)
     argparser.add_argument("-d", "--debug", action = 'store_true')
     argparser.add_argument("-i", "--info", action = 'store_true' )
@@ -20,83 +20,82 @@ if __name__ == "__main__":
     argparser.add_argument("-q", "--quiet", action = 'store_true')
     argparser.add_argument("-p", "--plain", action = "store_true")
     argparser.add_argument("-u", "--update", action = "store_true")
-    args = argparser.parse_args()
 
-    import settings
+    return argparser
 
-    settings.plain = args.plain
-    settings.filename = args.filename
-    settings.debug = args.debug
-    settings.info = args.info
+def init_logging():
+    logging.basicConfig()
+    logging.getLogger().setLevel(logging.INFO)
 
-    from classes import BuildIdFileHandlerIni, BuildIdFileHandlerRpmMacros, printInfo, getVersionFromReaders, saveVersion, buildProperties, parseVersionTranslatorsFromConfig
-
-    fileHandlers = {
+def get_handler_for_filetype(filetype):
+    file_handlers = {
         "ini": BuildIdFileHandlerIni(),
         "rpmmacro": BuildIdFileHandlerRpmMacros(),
     }
 
-    configDefaults = {
-        "title": "Untitled Project"
-    }
+    return file_handlers[filetype]
 
-    cfgparser = configparser.ConfigParser(defaults = configDefaults)
-    cfgparser.add_section("project")
-    cfgparser.read("buildid.cfg");
+def main_new_build():
+    vh = VersionHelpers()
 
-    parseVersionTranslatorsFromConfig(cfgparser)    
+    build = BuildId()
+    build.set_version(vh.get_version_from_readers())
 
-#   if args.debug:
-#       printDebug("Readers:" + str(versionReaders))
-#       printDebug("Writers:" + str(versionWriters))    
+    vh.write_all_version_writers(build.version)
 
-    properties = dict()
-    properties["project.title"] = cfgparser.get("project", "title")
+    outputHandler = get_handler_for_filetype(args.outputFormat)
+    outputHandler.write(build)
 
-    inputHandler = fileHandlers[args.inputFormat]
-    outputHandler = fileHandlers[args.outputFormat]
+    logging.info("Wrote file: %s/%s. View the file or just run `buildid` again to see all the properties.", os.getcwd(), outputHandler.get_filename())
+    print("")
+    print(outputHandler.to_string(build) + "\n")
+
+def main_current_build():
+    inputHandler = get_handler_for_filetype(args.inputFormat)
+
+    if not inputHandler.file_exists():
+        logging.info("There is no buildid file. Use -n to create a new build.")
+
+        return
+
+    buildid = BuildId()
+    inputHandler.read(buildid)
+
+    outputHandler = get_handler_for_filetype(args.outputFormat)
+
+    if args.key:
+        if args.plain:
+            key_ending = ""
+        else:
+            key_ending = "\n"
+
+        if args.key in buildid:
+            print(buildid[args.key], end=key_ending)
+        else:
+            print(args.key + " was not found.", end=key_ending)
+    elif args.keySearch:
+        for key in buildid:
+            if args.keySearch in key:
+                print(outputHandler.to_string_single(buildid, key))
+    else:
+        if not args.quiet:
+            logging.info("Printing buildid from file: %s", inputHandler.get_filename())
+            logging.info("You can output a single property with -k <property-name>")
+            logging.info("or see all these properties again without this message with -q")
+            print("")
+
+            if args.writeCopy is not None:
+                outputHandler.write(filename = args.writeCopy)
+            else:
+                print(outputHandler.to_string(buildid))
+
+
+if __name__ == "__main__":
+    init_logging()
+
+    args = get_argument_parser().parse_args()
 
     if args.newBuild:
-        version = getVersionFromReaders()
-
-        saveVersion(version)
-
-        outputHandler.write(buildProperties(version));
-
-        import os
-        printInfo("Wrote file: " + os.getcwd() + "/" + outputHandler.getFilename() + ". View the file or just run `buildid` again to see all the properties.");
-
-        if settings.info:
-            print(outputHandler.toString() + "\n")
-
+        main_new_build()
     else:
-        if not inputHandler.fileExists():
-            printInfo("There is no buildid file. Use -n to create a new build.")
-        else:
-            properties = inputHandler.read()
-
-            if args.key:
-                if settings.plain:
-                    keyEnding = ""
-                else:
-                    keyEnding = "\n"
-
-                if args.key in properties:
-                    print(properties[args.key], end=keyEnding)
-                else: 
-                    print(args.key + " was not found.", end=keyEnding);
-            elif args.keySearch:
-                for key in properties:
-                    if args.keySearch in key:
-                        print(outputHandler.toStringSingle(key))
-            else:
-                if not args.quiet:
-                    printInfo("Printing buildid from file: " + inputHandler.getFilename())
-                    printInfo("You can output a single property with -k <property-name>")
-                    printInfo("or see all these properties again without this message with -q");
-                    print("")
-
-                    if args.writeCopy != None:
-                        outputHandler.write(filename = args.writeCopy)
-                    else:
-                        print(outputHandler.toString())
+        main_current_build()
